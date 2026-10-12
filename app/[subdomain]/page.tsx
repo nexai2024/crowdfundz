@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import prisma from '@/lib/prisma'
+import { prisma } from '@/lib/prisma'
 
 export default async function SubdomainPage({ params }: { params: { subdomain: string } }) {
   const { subdomain } = params
