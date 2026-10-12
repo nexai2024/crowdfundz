@@ -1,17 +1,78 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
 generator client {
   provider = "prisma-client-js"
 }
 
-datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+model User {
+  id            String     @id @default(cuid())
+  email         String     @unique
+  name          String?
+  stripeConnectAccountId String? // For SaaS payouts to creators
+  campaigns     Campaign[]
+  createdAt     DateTime   @default(now())
 }
 
-model Tenant {
-  id        String   @id @default(cuid())
-  name      String
-  subdomain String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model Campaign {
+  id          String   @id @default(cuid())
+  slug        String   @unique // e.g. "protocol100"
+  title       String   // "Protocol100: The 100-Day Sprint"
+  tagline     String
+  story       String   @db.Text
+  targetGoal  Int      // in USD
+  totalRaised Int      @default(0)
+  backerCount Int      @default(0)
+  status      CampaignStatus @default(ACTIVE)
+  creatorId   String
+  creator     User     @relation(fields: [creatorId], references: [id])
+  tiers       Tier[]
+  backers     Backer[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  PAUSED
+}
+
+model Tier {
+  id          String    @id @default(cuid())
+  campaignId  String
+  campaign    Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  name        String    // e.g. "Day 1 Believer", "Sovereign Stack Bundle"
+  priceUsd    Int       // e.g. 2, 19, 49, 99
+  description String
+  perks       String[]  // Array of perks
+  limit       Int?      // Null = unlimited
+  backers     Backer[]
+  sortOrder   Int       @default(0)
+}
+
+model Backer {
+  id              String        @id @default(cuid())
+  campaignId      String
+  campaign        Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  tierId          String
+  tier            Tier          @relation(fields: [tierId], references: [id])
+  email           String
+  name            String
+  handle          String?
+  message         String?       @db.VarChar(120)
+  amountUsd       Int
+  status          PaymentStatus @default(PENDING)
+  stripeSessionId String?       @unique
+  backerNumber    Int           @default(autoincrement())
+  createdAt       DateTime      @default(now())
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
 }
