@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { creatorUrl, isOnCreatorHost, platformUrl } from "@/lib/hosts";
+import { isReservedSubdomain } from "@/lib/subdomain";
 import type {
   CampaignLandingData,
   CreatorHomeData,
@@ -41,6 +42,8 @@ export async function getPlatformProjects(): Promise<PlatformProjectCard[]> {
 }
 
 export async function getCreatorHome(subdomain: string): Promise<CreatorHomeData | null> {
+  if (isReservedSubdomain(subdomain)) return null;
+
   const creator = await prisma.user.findUnique({
     where: { subdomain },
     include: {
@@ -88,6 +91,8 @@ export async function getCampaignLanding(
   subdomain: string,
   slug: string
 ): Promise<CampaignLandingData | null> {
+  if (isReservedSubdomain(subdomain)) return null;
+
   const creator = await prisma.user.findUnique({
     where: { subdomain },
   });

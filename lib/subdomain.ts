@@ -17,6 +17,10 @@ export function normalizeSubdomain(value: string): string {
   return value.trim().toLowerCase();
 }
 
+export function isReservedSubdomain(value: string): boolean {
+  return RESERVED.has(normalizeSubdomain(value));
+}
+
 const SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,48}[a-z0-9])?$/;
 
 export function normalizeSlug(value: string): string {

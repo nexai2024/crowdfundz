@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { ArrowLeft, Heart, Users } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { isOnCreatorHost } from "@/lib/hosts";
+import { isReservedSubdomain } from "@/lib/subdomain";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,8 @@ type PageProps = {
 };
 
 export default async function BackerWallPage({ params }: PageProps) {
+  if (isReservedSubdomain(params.subdomain)) notFound();
+
   const creator = await prisma.user.findUnique({
     where: { subdomain: params.subdomain },
   });

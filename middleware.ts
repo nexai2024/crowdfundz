@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { isReservedSubdomain } from './lib/subdomain';
 
 export const config = {
   matcher: [
-    "/((?!api/|_next/|_static/|[\\w-]+\\.\\w+).*)",
+    "/((?!api(?:/|$)|_next/|_static/|[\\w-]+\\.\\w+).*)",
   ],
 };
 
@@ -32,8 +33,8 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Handle subdomain logic
-  if (subdomain) {
+  // Handle subdomain logic. Reserved names such as "api" stay on the App Router.
+  if (subdomain && !isReservedSubdomain(subdomain)) {
     try {
       // Use fetch to verify if the subdomain exists
       const response = await fetch(`${url.origin}/api/tenant?subdomain=${subdomain}`);
