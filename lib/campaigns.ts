@@ -70,6 +70,7 @@ export async function getCreatorHome(subdomain: string): Promise<CreatorHomeData
       creator.bio ||
       "Each project on this page is a live campaign. Open one to see the story, pledge levels, and backer wall.",
     platformHref: onCreatorHost ? platformUrl(host) : "/",
+    projectPathPrefix: onCreatorHost ? "" : `/${subdomain}`,
     projects: campaigns.map((campaign) => ({
       slug: campaign.slug,
       title: campaign.title,

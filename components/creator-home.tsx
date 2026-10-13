@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRight, Zap } from "lucide-react";
+import NewProjectForm from "@/components/new-project-form";
 import type { CreatorHomeData } from "@/lib/landing-types";
 
 const STATUS_LABEL = {
@@ -60,7 +61,7 @@ export default function CreatorHome({ creator }: { creator: CreatorHomeData }) {
           <div className="rounded-3xl border border-dashed border-slate-800 bg-slate-900/40 p-10 text-center">
             <h2 className="text-2xl font-bold text-white">No projects published yet</h2>
             <p className="mt-3 text-sm text-slate-400">
-              When {creator.name} launches a campaign, it will appear here at{" "}
+              Publish the first campaign below. It will show up here at{" "}
               <span className="font-mono text-emerald-400">{creator.subdomain}/your-slug</span>.
             </p>
           </div>
@@ -117,6 +118,10 @@ export default function CreatorHome({ creator }: { creator: CreatorHomeData }) {
             </div>
           </div>
         )}
+
+        <div className="mt-10">
+          <NewProjectForm subdomain={creator.subdomain} pathPrefix={creator.projectPathPrefix} />
+        </div>
       </section>
     </div>
   );

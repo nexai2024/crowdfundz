@@ -70,6 +70,7 @@ export type CreatorHomeData = {
   bio: string;
   projects: CreatorProjectCard[];
   platformHref: string;
+  projectPathPrefix: string;
 };
 
 export type PlatformProjectCard = {

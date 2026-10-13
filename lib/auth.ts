@@ -14,12 +14,4 @@ export const auth = betterAuth({
   ]
 });
 
-
-
-export const auth = betterAuth({
-  // ... your existing config
-  plugins: [
-    // ... other plugins
-    dash()
-  ]
-})
+  
