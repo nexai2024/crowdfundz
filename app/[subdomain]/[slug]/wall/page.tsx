@@ -77,7 +77,7 @@ export default async function BackerWallPage({ params }: PageProps) {
                   )}
                   {backer.message && (
                     <p className="mt-3 text-xs text-slate-300 italic bg-slate-950/50 p-2.5 rounded-lg border border-slate-800/50">
-                      "{backer.message}"
+                      &ldquo;{backer.message}&rdquo;
                     </p>
                   )}
                 </div>

@@ -203,7 +203,7 @@ export default function CampaignLanding({ campaign }: { campaign: CampaignLandin
           </div>
           {campaign.manifestoQuote && (
             <blockquote className="mt-6 p-4 rounded-xl border-l-2 border-emerald-500 bg-slate-900/40 text-xs font-mono text-slate-400">
-              "{campaign.manifestoQuote}"
+              &ldquo;{campaign.manifestoQuote}&rdquo;
             </blockquote>
           )}
         </div>
@@ -341,7 +341,7 @@ export default function CampaignLanding({ campaign }: { campaign: CampaignLandin
                   )}
                   {backer.message && (
                     <p className="mt-2 text-slate-300 italic text-[11px] bg-slate-950/60 p-2 rounded border border-slate-800/40">
-                      "{backer.message}"
+                      &ldquo;{backer.message}&rdquo;
                     </p>
                   )}
                 </div>
