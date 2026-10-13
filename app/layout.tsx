@@ -15,13 +15,13 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Protocol100 — 100 Days. 1 Solo Builder. 0 Venture Capital.",
+  title: "Crowdventure — A subdomain for every builder",
   description:
-    "An open, build-in-public sprint taking indie founders from zero to launched software without outside investment.",
+    "Claim a subdomain, publish each project at its own slug, and raise pledges on a shared campaign template.",
   openGraph: {
-    title: "Protocol100 — The 100-Day Public Sprint",
+    title: "Crowdventure",
     description:
-      "Fuel the build-in-public experiment. Micro-pledges prove solo builders can ship without VC backing.",
+      "Creator homes and project pages for independent builds. The template is shared. The campaign data is not.",
     type: "website",
   },
 };

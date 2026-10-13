@@ -1,32 +1,27 @@
-import { NextRequest, NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { normalizeSubdomain } from "@/lib/subdomain";
 
 export async function GET(request: NextRequest) {
-  const subdomain = request.nextUrl.searchParams.get('subdomain')
-
-  console.log('API: Received request for subdomain:', subdomain)
+  const subdomain = normalizeSubdomain(request.nextUrl.searchParams.get("subdomain") || "");
 
   if (!subdomain) {
-    console.log('API: Subdomain is required')
-    return NextResponse.json({ error: 'Subdomain is required' }, { status: 400 })
+    return NextResponse.json({ error: "Subdomain is required" }, { status: 400 });
   }
 
   try {
-    const tenant = await prisma.tenant.findUnique({
+    const creator = await prisma.user.findUnique({
       where: { subdomain },
-      select: { id: true, name: true, subdomain: true }
-    })
+      select: { id: true, name: true, subdomain: true },
+    });
 
-    console.log('API: Tenant found:', tenant)
-
-    if (!tenant) {
-      console.log('API: Tenant not found')
-      return NextResponse.json({ error: 'Tenant not found' }, { status: 404 })
+    if (!creator) {
+      return NextResponse.json({ error: "Creator not found" }, { status: 404 });
     }
 
-    return NextResponse.json(tenant)
+    return NextResponse.json(creator);
   } catch (error) {
-    console.error('API: Error fetching tenant:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error("API: Error fetching creator:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

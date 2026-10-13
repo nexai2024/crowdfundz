@@ -11,7 +11,10 @@ In **May 2024** I published a detailed walkthrough on Medium — ["How to crea
 
 ### Key features
 
-- **Wildcard sub‑domains** (`tenant.your‑domain.com`) handled in `middleware.ts`
+- **Wildcard sub‑domains** (`tenant.your‑domai
+
+
+n.com`) handled in `middleware.ts`
 - Lean file structure that scales to auth, billing, analytics, etc.
 - Example integrations: **Supabase** (Postgres + Auth) and **Cloudflare** (DNS management)
 - Developer happiness: strict TypeScript, ESLint, Prettier, **Tailwind CSS + shadcn/ui** components

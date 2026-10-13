@@ -12,14 +12,16 @@
     "dev:proxy": "cross-env NODE_ENV=development concurrently \"npm run dev\" \"npm run proxy\""
   },
   "prisma": {
-    "seed": "node --loader ts-node/esm prisma/seed.mts"
+    "seed": "node prisma/seed.mts"
   },
   "dependencies": {
+    "@better-auth/infra": "^0.4.18",
     "@neondatabase/serverless": "^0.9.4",
-    "@prisma/adapter-pg": "^5.16.2",
+    "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
     "@supabase/ssr": "^0.4.0",
     "@supabase/supabase-js": "^2.44.3",
+    "better-auth": "^1.7.7",
     "lucide-react": "^1.55.0",
     "next": "14.2.5",
     "pg": "^8.12.0",
@@ -34,6 +36,7 @@
     "@types/react-dom": "^18",
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
+    "dotenv": "^18.0.7",
     "eslint": "^8",
     "eslint-config-next": "14.2.5",
     "http-proxy": "^1.18.1",

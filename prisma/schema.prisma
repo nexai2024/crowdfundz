@@ -1,6 +1,5 @@
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 generator client {
@@ -8,30 +7,66 @@ generator client {
 }
 
 model User {
-  id            String     @id @default(cuid())
-  email         String     @unique
-  name          String?
-  stripeConnectAccountId String? // For SaaS payouts to creators
-  campaigns     Campaign[]
-  createdAt     DateTime   @default(now())
+  id                     String     @id @default(cuid())
+  email                  String     @unique
+  name                   String?
+  subdomain              String     @unique
+  headline               String?
+  bio                    String?    @db.Text
+  stripeConnectAccountId String?
+  campaigns              Campaign[]
+  createdAt              DateTime   @default(now())
 }
 
 model Campaign {
+  id              String         @id @default(cuid())
+  slug            String
+  title           String
+  tagline         String
+  story           String         @db.Text
+  eyebrow         String?
+  statusLabel     String?
+  manifestoTitle  String?
+  manifestoQuote  String?
+  endsAt          DateTime?
+  targetGoal      Int
+  totalRaised     Int            @default(0)
+  backerCount     Int            @default(0)
+  status          CampaignStatus @default(ACTIVE)
+  creatorId       String
+  creator         User           @relation(fields: [creatorId], references: [id])
+  tiers           Tier[]
+  backers         Backer[]
+  phases          Phase[]
+  faqs            Faq[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@unique([creatorId, slug])
+  @@index([creatorId])
+}
+
+model Phase {
   id          String   @id @default(cuid())
-  slug        String   @unique // e.g. "protocol100"
-  title       String   // "Protocol100: The 100-Day Sprint"
-  tagline     String
-  story       String   @db.Text
-  targetGoal  Int      // in USD
-  totalRaised Int      @default(0)
-  backerCount Int      @default(0)
-  status      CampaignStatus @default(ACTIVE)
-  creatorId   String
-  creator     User     @relation(fields: [creatorId], references: [id])
-  tiers       Tier[]
-  backers     Backer[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  campaignId  String
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  label       String
+  title       String
+  description String   @db.Text
+  sortOrder   Int      @default(0)
+
+  @@index([campaignId])
+}
+
+model Faq {
+  id         String   @id @default(cuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  question   String
+  answer     String   @db.Text
+  sortOrder  Int      @default(0)
+
+  @@index([campaignId])
 }
 
 enum CampaignStatus {
@@ -45,13 +80,17 @@ model Tier {
   id          String    @id @default(cuid())
   campaignId  String
   campaign    Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  name        String    // e.g. "Day 1 Believer", "Sovereign Stack Bundle"
-  priceUsd    Int       // e.g. 2, 19, 49, 99
+  name        String
+  priceUsd    Int
   description String
-  perks       String[]  // Array of perks
-  limit       Int?      // Null = unlimited
+  perks       String[]
+  badge       String?
+  featured    Boolean   @default(false)
+  limit       Int?
   backers     Backer[]
   sortOrder   Int       @default(0)
+
+  @@index([campaignId])
 }
 
 model Backer {
@@ -69,6 +108,9 @@ model Backer {
   stripeSessionId String?       @unique
   backerNumber    Int           @default(autoincrement())
   createdAt       DateTime      @default(now())
+
+  @@index([campaignId])
+  @@index([tierId])
 }
 
 enum PaymentStatus {

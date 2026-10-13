@@ -25,6 +25,6 @@
     "esm": true,
     "experimentalSpecifierResolution": "node"
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "app/page.jsx", "app/components/CreateTenantForm.jsx", "scripts/check-tenants.mts", "scripts/check-tenants.js", "prisma/seed.mts"],
-  "exclude": ["node_modules"]
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "app/page.jsx", "app/components/CreateTenantForm.jsx", "scripts/check-tenants.mts", "scripts/check-tenants.js"],
+  "exclude": ["node_modules", "prisma/seed.mts"]
 }
