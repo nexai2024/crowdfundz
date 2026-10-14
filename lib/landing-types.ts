@@ -29,6 +29,84 @@ export type CampaignFaqView = {
   answer: string;
 };
 
+export type BuildMetricView = {
+  pageViews: number;
+  uniqueUsers: number;
+  commitsCount: number;
+  weeklyGrowth: number;
+};
+
+export type IdeUpdateView = {
+  id: string;
+  editor: string;
+  commitHash: string | null;
+  commitMessage: string;
+  linesAdded: number;
+  linesDeleted: number;
+  fileChanged: string | null;
+  createdAt: string;
+};
+
+export type DemoSandboxView = {
+  id: string;
+  title: string;
+  sandboxUrl: string;
+  embedCode: string | null;
+  environment: string;
+  status: string;
+};
+
+export type GovernancePollView = {
+  id: string;
+  title: string;
+  description: string;
+  options: string[];
+  status: string;
+  expiresAt: string | null;
+  votesCount: number;
+};
+
+export type BountyView = {
+  id: string;
+  title: string;
+  description: string;
+  rewardUsd: number;
+  status: string;
+};
+
+export type ComplianceCheckView = {
+  disclaimerVerified: boolean;
+  kycStatus: string;
+  jurisdiction: string;
+  taxFormFiled: boolean;
+};
+
+export type SponsorSlotView = {
+  id: string;
+  sponsorName: string;
+  logoUrl: string;
+  websiteUrl: string;
+  tierName: string;
+  amountPaidUsd: number;
+};
+
+export type CollaborationLoopView = {
+  id: string;
+  partnerSubdomain: string;
+  partnerSlug: string;
+  partnerTitle: string;
+  discountPercentage: number;
+};
+
+export type MilestonePaywallView = {
+  id: string;
+  title: string;
+  description: string;
+  requiredRaisedUsd: number;
+  contentUrl: string;
+  locked: boolean;
+};
+
 export type CampaignLandingData = {
   slug: string;
   title: string;
@@ -50,6 +128,15 @@ export type CampaignLandingData = {
   backers: CampaignBackerView[];
   phases: CampaignPhaseView[];
   faqs: CampaignFaqView[];
+  metrics?: BuildMetricView | null;
+  ideUpdates?: IdeUpdateView[];
+  sandboxes?: DemoSandboxView[];
+  polls?: GovernancePollView[];
+  bounties?: BountyView[];
+  compliance?: ComplianceCheckView | null;
+  sponsors?: SponsorSlotView[];
+  collaborations?: CollaborationLoopView[];
+  paywalls?: MilestonePaywallView[];
 };
 
 export type CreatorProjectCard = {

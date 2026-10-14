@@ -159,6 +159,15 @@ export async function getCampaignLanding(
         orderBy: { createdAt: "desc" },
         take: 12,
       },
+      metrics: { orderBy: { recordedAt: "desc" }, take: 1 },
+      ideUpdates: { orderBy: { createdAt: "desc" }, take: 5 },
+      sandboxes: { take: 3 },
+      polls: { include: { votes: true }, orderBy: { createdAt: "desc" } },
+      bounties: { orderBy: { createdAt: "desc" } },
+      compliance: true,
+      sponsors: { where: { active: true } },
+      collaborations: true,
+      paywalls: { orderBy: { requiredRaisedUsd: "asc" } },
     },
   });
 
@@ -166,6 +175,7 @@ export async function getCampaignLanding(
 
   const host = requestHost();
   const onCreatorHost = isOnCreatorHost(host, subdomain);
+  const metric = campaign.metrics[0];
 
   return {
     slug: campaign.slug,
@@ -210,6 +220,79 @@ export async function getCampaignLanding(
     faqs: campaign.faqs.map((faq) => ({
       question: faq.question,
       answer: faq.answer,
+    })),
+    metrics: metric
+      ? {
+          pageViews: metric.pageViews,
+          uniqueUsers: metric.uniqueUsers,
+          commitsCount: metric.commitsCount,
+          weeklyGrowth: metric.weeklyGrowth,
+        }
+      : null,
+    ideUpdates: campaign.ideUpdates.map((update) => ({
+      id: update.id,
+      editor: update.editor,
+      commitHash: update.commitHash,
+      commitMessage: update.commitMessage,
+      linesAdded: update.linesAdded,
+      linesDeleted: update.linesDeleted,
+      fileChanged: update.fileChanged,
+      createdAt: update.createdAt.toISOString(),
+    })),
+    sandboxes: campaign.sandboxes.map((sb) => ({
+      id: sb.id,
+      title: sb.title,
+      sandboxUrl: sb.sandboxUrl,
+      embedCode: sb.embedCode,
+      environment: sb.environment,
+      status: sb.status,
+    })),
+    polls: campaign.polls.map((p) => ({
+      id: p.id,
+      title: p.title,
+      description: p.description,
+      options: p.options,
+      status: p.status,
+      expiresAt: p.expiresAt ? p.expiresAt.toISOString() : null,
+      votesCount: p.votes.length,
+    })),
+    bounties: campaign.bounties.map((b) => ({
+      id: b.id,
+      title: b.title,
+      description: b.description,
+      rewardUsd: b.rewardUsd,
+      status: b.status,
+    })),
+    compliance: campaign.compliance
+      ? {
+          disclaimerVerified: campaign.compliance.disclaimerVerified,
+          kycStatus: campaign.compliance.kycStatus,
+          jurisdiction: campaign.compliance.jurisdiction,
+          taxFormFiled: campaign.compliance.taxFormFiled,
+        }
+      : null,
+    sponsors: campaign.sponsors.map((s) => ({
+      id: s.id,
+      sponsorName: s.sponsorName,
+      logoUrl: s.logoUrl,
+      websiteUrl: s.websiteUrl,
+      tierName: s.tierName,
+      amountPaidUsd: s.amountPaidUsd,
+    })),
+    collaborations: campaign.collaborations.map((c) => ({
+      id: c.id,
+      partnerSubdomain: c.partnerSubdomain,
+      partnerSlug: c.partnerSlug,
+      partnerTitle: c.partnerTitle,
+      discountPercentage: c.discountPercentage,
+    })),
+    paywalls: campaign.paywalls.map((pw) => ({
+      id: pw.id,
+      title: pw.title,
+      description: pw.description,
+      requiredRaisedUsd: pw.requiredRaisedUsd,
+      contentUrl: pw.contentUrl,
+      locked: campaign.totalRaised < pw.requiredRaisedUsd,
     })),
   };
 }
