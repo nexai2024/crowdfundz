@@ -65,7 +65,7 @@ export type CreatorProjectCard = {
 
 export type CreatorHomeData = {
   name: string;
-  subdomain: string;
+  subdomain: string | null;
   headline: string;
   bio: string;
   projects: CreatorProjectCard[];

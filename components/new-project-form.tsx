@@ -6,9 +6,11 @@ import { useRouter } from "next/navigation";
 export default function NewProjectForm({
   subdomain,
   pathPrefix,
+  signedIn = false,
 }: {
   subdomain: string;
   pathPrefix: string;
+  signedIn?: boolean;
 }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -39,8 +41,8 @@ export default function NewProjectForm({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          subdomain,
-          email,
+          subdomain: subdomain || undefined,
+          email: signedIn ? undefined : email,
           slug,
           title,
           tagline,
@@ -80,23 +82,31 @@ export default function NewProjectForm({
       <p className="text-xs font-mono uppercase tracking-wider text-emerald-400">New project</p>
       <h2 className="mt-2 text-2xl font-bold text-white">Publish the next slug</h2>
       <p className="mt-2 text-sm text-slate-400">
-        Confirm the email that claimed {subdomain}, then this page gets a live campaign at{" "}
-        <span className="font-mono text-emerald-300">
-          {subdomain}/{preview}
-        </span>
-        .
+        {subdomain
+          ? signedIn
+            ? "This page gets a live campaign at "
+            : `Confirm the email that claimed ${subdomain}, then this page gets a live campaign at `
+          : "Publish it here first. It stays off the public list until you claim a subdomain. "}
+        {subdomain && (
+          <span className="font-mono text-emerald-300">
+            {subdomain}/{preview}
+          </span>
+        )}
+        {subdomain ? "." : null}
       </p>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        <Field
-          label="Account email"
-          type="email"
-          value={email}
-          onChange={setEmail}
-          placeholder="you@studio.dev"
-          required
-          className="sm:col-span-2"
-        />
+        {!signedIn && (
+          <Field
+            label="Account email"
+            type="email"
+            value={email}
+            onChange={setEmail}
+            placeholder="you@studio.dev"
+            required
+            className="sm:col-span-2"
+          />
+        )}
         <Field label="Title" value={title} onChange={setTitle} placeholder="Harbor" required />
         <Field
           label="Slug"

@@ -1,5 +1,6 @@
-import PlatformHome from "@/components/platform-home";
+import MarketingHome from "@/components/marketing-home";
 import { getPlatformProjects } from "@/lib/campaigns";
+import { getSessionUser } from "@/lib/current-user";
 
 export const dynamic = "force-dynamic";
 
@@ -11,5 +12,6 @@ export default async function HomePage() {
     console.error("HomePage: could not load live campaigns", error);
   }
 
-  return <PlatformHome projects={projects} />;
+  const user = await getSessionUser().catch(() => null);
+  return <MarketingHome projects={projects} signedIn={Boolean(user)} />;
 }

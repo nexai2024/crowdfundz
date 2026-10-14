@@ -12,12 +12,17 @@ export default function PlatformHome({ projects }: { projects: PlatformProjectCa
           <Link href="/" className="font-mono text-sm font-bold tracking-tight text-white">
             CROWDVENTURE
           </Link>
-          <a
-            href="#claim"
-            className="rounded-lg bg-emerald-500 px-3.5 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-emerald-400"
-          >
-            Claim a subdomain
-          </a>
+          <div className="flex items-center gap-4">
+            <Link href="/account" className="text-xs font-mono text-slate-400 hover:text-emerald-300">
+              Your home
+            </Link>
+            <a
+              href="#claim"
+              className="rounded-lg bg-emerald-500 px-3.5 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-emerald-400"
+            >
+              Claim a subdomain
+            </a>
+          </div>
         </div>
       </header>
 

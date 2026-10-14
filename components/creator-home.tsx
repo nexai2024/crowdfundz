@@ -1,5 +1,7 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Zap } from "lucide-react";
+import ClaimSubdomainPrompt from "@/components/claim-subdomain-prompt";
 import NewProjectForm from "@/components/new-project-form";
 import type { CreatorHomeData } from "@/lib/landing-types";
 
@@ -10,7 +12,13 @@ const STATUS_LABEL = {
   PAUSED: "Paused",
 } as const;
 
-export default function CreatorHome({ creator }: { creator: CreatorHomeData }) {
+export default function CreatorHome({
+  creator,
+  signedIn = false,
+}: {
+  creator: CreatorHomeData;
+  signedIn?: boolean;
+}) {
   const raised = creator.projects.reduce((sum, project) => sum + project.totalRaised, 0);
   const backers = creator.projects.reduce((sum, project) => sum + project.backerCount, 0);
   const featured = creator.projects.find((project) => project.status === "ACTIVE") ?? creator.projects[0];
@@ -25,7 +33,9 @@ export default function CreatorHome({ creator }: { creator: CreatorHomeData }) {
             </div>
             <div className="min-w-0">
               <div className="font-mono text-sm font-bold text-white truncate">{creator.name}</div>
-              <div className="text-[10px] font-mono text-slate-500 truncate">{creator.subdomain}</div>
+              <div className="text-[10px] font-mono text-slate-500 truncate">
+                {creator.subdomain ?? "No subdomain yet"}
+              </div>
             </div>
           </div>
           <a
@@ -57,6 +67,9 @@ export default function CreatorHome({ creator }: { creator: CreatorHomeData }) {
       </section>
 
       <section className="px-6 pb-20 max-w-6xl mx-auto">
+        {!creator.subdomain && creator.projects.length > 0 && (
+          <ClaimSubdomainPrompt projectCount={creator.projects.length} />
+        )}
         {creator.projects.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-slate-800 bg-slate-900/40 p-10 text-center">
             <h2 className="text-2xl font-bold text-white">No projects published yet</h2>
@@ -68,15 +81,15 @@ export default function CreatorHome({ creator }: { creator: CreatorHomeData }) {
         ) : (
           <div className="space-y-6">
             {featured && (
-              <Link
+              <ProjectLink
                 href={featured.href}
                 className="group block rounded-3xl border border-emerald-500/30 bg-slate-900/70 p-8 sm:p-10 hover:border-emerald-400/60 transition"
               >
                 <div className="flex items-center justify-between gap-4 text-xs font-mono text-emerald-400">
                   <span>FEATURED · {STATUS_LABEL[featured.status].toUpperCase()}</span>
                   <span className="inline-flex items-center gap-1">
-                    {creator.subdomain}/{featured.slug}
-                    <ArrowUpRight className="w-3.5 h-3.5" />
+                    {creator.subdomain ? `${creator.subdomain}/${featured.slug}` : "Unlisted"}
+                    {featured.href && <ArrowUpRight className="w-3.5 h-3.5" />}
                   </span>
                 </div>
                 <h2 className="mt-4 text-3xl sm:text-4xl font-extrabold text-white group-hover:text-emerald-100 transition">
@@ -88,14 +101,14 @@ export default function CreatorHome({ creator }: { creator: CreatorHomeData }) {
                   goal={featured.targetGoal}
                   backers={featured.backerCount}
                 />
-              </Link>
+              </ProjectLink>
             )}
 
             <div className="grid md:grid-cols-2 gap-4">
               {creator.projects
                 .filter((project) => project.slug !== featured?.slug)
                 .map((project) => (
-                  <Link
+                  <ProjectLink
                     key={project.slug}
                     href={project.href}
                     className="group rounded-2xl border border-slate-800 bg-slate-900/50 p-6 hover:border-slate-600 transition"
@@ -103,7 +116,7 @@ export default function CreatorHome({ creator }: { creator: CreatorHomeData }) {
                     <div className="flex items-center justify-between text-[11px] font-mono text-slate-500">
                       <span>{STATUS_LABEL[project.status]}</span>
                       <span>
-                        {creator.subdomain}/{project.slug}
+                        {creator.subdomain ? `${creator.subdomain}/${project.slug}` : "Unlisted"}
                       </span>
                     </div>
                     <h3 className="mt-3 text-xl font-bold text-white">{project.title}</h3>
@@ -113,17 +126,38 @@ export default function CreatorHome({ creator }: { creator: CreatorHomeData }) {
                       goal={project.targetGoal}
                       backers={project.backerCount}
                     />
-                  </Link>
+                  </ProjectLink>
                 ))}
             </div>
           </div>
         )}
 
         <div className="mt-10">
-          <NewProjectForm subdomain={creator.subdomain} pathPrefix={creator.projectPathPrefix} />
+          <NewProjectForm
+            subdomain={creator.subdomain ?? ""}
+            pathPrefix={creator.projectPathPrefix}
+            signedIn={signedIn}
+          />
         </div>
       </section>
     </div>
+  );
+}
+
+function ProjectLink({
+  href,
+  className,
+  children,
+}: {
+  href: string;
+  className: string;
+  children: ReactNode;
+}) {
+  if (!href) return <div className={className}>{children}</div>;
+  return (
+    <Link href={href} className={className}>
+      {children}
+    </Link>
   );
 }
 

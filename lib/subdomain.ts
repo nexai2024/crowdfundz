@@ -6,6 +6,7 @@ const RESERVED = new Set([
   "mail",
   "static",
   "assets",
+  "account",
   "localhost",
   "crowdventure",
   "venturesolo",

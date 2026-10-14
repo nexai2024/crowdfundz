@@ -26,19 +26,25 @@ export async function getPlatformProjects(): Promise<PlatformProjectCard[]> {
     take: 6,
     include: { creator: true },
   });
+  return campaigns.flatMap((campaign) => {
+    const subdomain = campaign.creator.subdomain;
+    if (!subdomain) return [];
 
-  return campaigns.map((campaign) => ({
-    title: campaign.title,
-    tagline: campaign.tagline,
-    creatorName: campaign.creator.name || campaign.creator.subdomain,
-    subdomain: campaign.creator.subdomain,
-    slug: campaign.slug,
-    totalRaised: campaign.totalRaised,
-    targetGoal: campaign.targetGoal,
-    backerCount: campaign.backerCount,
-    href: creatorUrl(host, campaign.creator.subdomain, `/${campaign.slug}`),
-    creatorHref: creatorUrl(host, campaign.creator.subdomain),
-  }));
+    return [
+      {
+        title: campaign.title,
+        tagline: campaign.tagline,
+        creatorName: campaign.creator.name || subdomain,
+        subdomain,
+        slug: campaign.slug,
+        totalRaised: campaign.totalRaised,
+        targetGoal: campaign.targetGoal,
+        backerCount: campaign.backerCount,
+        href: creatorUrl(host, subdomain, `/${campaign.slug}`),
+        creatorHref: creatorUrl(host, subdomain),
+      },
+    ];
+  });
 }
 
 export async function getCreatorHome(subdomain: string): Promise<CreatorHomeData | null> {
@@ -67,7 +73,7 @@ export async function getCreatorHome(subdomain: string): Promise<CreatorHomeData
 
   return {
     name,
-    subdomain: creator.subdomain,
+    subdomain: creator.subdomain ?? subdomain,
     headline: creator.headline || `Projects by ${name}`,
     bio:
       creator.bio ||
@@ -83,6 +89,50 @@ export async function getCreatorHome(subdomain: string): Promise<CreatorHomeData
       totalRaised: campaign.totalRaised,
       backerCount: campaign.backerCount,
       href: onCreatorHost ? `/${campaign.slug}` : `/${subdomain}/${campaign.slug}`,
+    })),
+  };
+}
+
+export async function getStudioHome(userId: string): Promise<CreatorHomeData | null> {
+  const creator = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      campaigns: {
+        orderBy: { updatedAt: "desc" },
+      },
+    },
+  });
+
+  if (!creator) return null;
+
+  const subdomain = creator.subdomain;
+  const name = creator.name || subdomain || "Your studio";
+  const statusRank = { ACTIVE: 0, PAUSED: 1, DRAFT: 2, COMPLETED: 3 } as const;
+  const campaigns = [...creator.campaigns].sort((a, b) => {
+    const statusDiff = statusRank[a.status] - statusRank[b.status];
+    if (statusDiff !== 0) return statusDiff;
+    return b.totalRaised - a.totalRaised;
+  });
+
+  return {
+    name,
+    subdomain,
+    headline: creator.headline || (subdomain ? `Projects by ${name}` : "Your projects are ready for a public name"),
+    bio: subdomain
+      ? creator.bio ||
+        "Each project on this page is a live campaign. Open one to see the story, pledge levels, and backer wall."
+      : "These campaigns stay off the public list until this account claims a subdomain.",
+    platformHref: "/",
+    projectPathPrefix: subdomain ? `/${subdomain}` : "",
+    projects: campaigns.map((campaign) => ({
+      slug: campaign.slug,
+      title: campaign.title,
+      tagline: campaign.tagline,
+      status: campaign.status,
+      targetGoal: campaign.targetGoal,
+      totalRaised: campaign.totalRaised,
+      backerCount: campaign.backerCount,
+      href: subdomain ? `/${subdomain}/${campaign.slug}` : "",
     })),
   };
 }
@@ -130,8 +180,8 @@ export async function getCampaignLanding(
     totalRaised: campaign.totalRaised,
     backerCount: campaign.backerCount,
     daysRemaining: daysRemaining(campaign.endsAt),
-    creatorName: creator.name || creator.subdomain,
-    subdomain: creator.subdomain,
+    creatorName: creator.name || creator.subdomain || subdomain,
+    subdomain: creator.subdomain ?? subdomain,
     homeHref: onCreatorHost ? "/" : `/${subdomain}`,
     wallHref: onCreatorHost ? `/${slug}/wall` : `/${subdomain}/${slug}/wall`,
     tiers: campaign.tiers.map((tier) => ({

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { getSessionUser } from "@/lib/current-user";
 import { normalizeSlug, normalizeSubdomain, slugError } from "@/lib/subdomain";
 
 type ProjectBody = {
@@ -38,13 +39,15 @@ export async function POST(request: NextRequest) {
     const tierPrice = wholeDollars(body.tierPrice);
     const invalidSlug = slugError(slug);
 
-    if (!subdomain || !email || !slug || !title || !tagline || !story) {
+    const sessionUser = await getSessionUser();
+
+    if (!slug || !title || !tagline || !story || (!sessionUser && (!subdomain || !email))) {
       return NextResponse.json(
-        { error: "Email, slug, title, tagline, and story are required" },
+        { error: "Slug, title, tagline, and story are required" },
         { status: 400 }
       );
     }
-    if (!email.includes("@")) {
+    if (!sessionUser && !email.includes("@")) {
       return NextResponse.json({ error: "Enter the email on this subdomain" }, { status: 400 });
     }
     if (invalidSlug) {
@@ -66,12 +69,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const creator = await prisma.user.findUnique({
-      where: { subdomain },
-      select: { id: true, email: true, name: true },
-    });
+    const creator = sessionUser
+      ? sessionUser
+      : await prisma.user.findUnique({
+          where: { subdomain },
+          select: { id: true, email: true, name: true, subdomain: true },
+        });
 
-    if (!creator || creator.email.toLowerCase() !== email) {
+    if (!creator || (!sessionUser && creator.email.toLowerCase() !== email)) {
+      return NextResponse.json(
+        { error: "That email does not own this subdomain" },
+        { status: 403 }
+      );
+    }
+    if (sessionUser && email && creator.email.toLowerCase() !== email) {
+      return NextResponse.json(
+        { error: "That email does not match the signed-in account" },
+        { status: 403 }
+      );
+    }
+    if (subdomain && creator.subdomain !== subdomain) {
       return NextResponse.json(
         { error: "That email does not own this subdomain" },
         { status: 403 }

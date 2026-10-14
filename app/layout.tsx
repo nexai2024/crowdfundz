@@ -15,13 +15,13 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Crowdventure — A subdomain for every builder",
+  title: "CrowdVenture — Back Independence",
   description:
-    "Claim a subdomain, publish each project at its own slug, and raise pledges on a shared campaign template.",
+    "CrowdVenture connects software craftspeople with forward-thinking patrons. Back verified solopreneurs, track live build metrics, and unlock insider access before the mainstream.",
   openGraph: {
-    title: "Crowdventure",
+    title: "CrowdVenture",
     description:
-      "Creator homes and project pages for independent builds. The template is shared. The campaign data is not.",
+      "Back verified solopreneurs, track live build metrics, and unlock insider access to tools before they hit the mainstream.",
     type: "website",
   },
 };
