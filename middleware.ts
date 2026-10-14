@@ -1,55 +1,55 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { isReservedSubdomain } from './lib/subdomain';
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { isReservedSubdomain } from "./lib/subdomain";
+
+const APEX_HOSTS = new Set([
+  "crowdventure.quest",
+  "venturesolo.quest",
+  "localhost",
+  "127.0.0.1",
+]);
 
 export const config = {
   matcher: [
-    "/((?!api(?:/|$)|_next/|_static/|[\\w-]+\\.\\w+).*)",
+    "/((?!_next/|_static/|.*\\..*).*)",
   ],
 };
 
+function isApiPath(pathname: string): boolean {
+  return pathname === "/api" || pathname.startsWith("/api/");
+}
+
 export async function middleware(req: NextRequest) {
-  const url = req.nextUrl;
-  let hostname = req.headers.get("host") || '';
+  const { pathname } = req.nextUrl;
 
-  // Remove port if it exists
-  hostname = hostname.split(':')[0];
-
-  // Define allowed domains (including main domain and localhost)
-  const allowedDomains = ["crowdventure.quest", "venturesolo.quest", "localhost"];
-
-  // Check if the current hostname is in the list of allowed domains
-  const isMainDomain = allowedDomains.includes(hostname);
-
-  // Extract subdomain if not a main domain
-  const subdomain = isMainDomain ? null : hostname.split('.')[0];
-
-  console.log('Middleware: Hostname:', hostname);
-  console.log('Middleware: Subdomain:', subdomain);
-
-  // If it's a main domain, allow the request to proceed
-  if (isMainDomain) {
-    console.log('Middleware: Main domain detected, passing through');
+  // /api/auth and the rest of app/api are route handlers, not creator subdomains.
+  if (isApiPath(pathname)) {
     return NextResponse.next();
   }
 
-  // Handle subdomain logic. Reserved names such as "api" stay on the App Router.
-  if (subdomain && !isReservedSubdomain(subdomain)) {
-    try {
-      // Use fetch to verify if the subdomain exists
-      const response = await fetch(`${url.origin}/api/tenant?subdomain=${subdomain}`);
-      
-      if (response.ok) {
-        console.log('Middleware: Valid subdomain detected, rewriting URL');
-        // Rewrite the URL to a dynamic route based on the subdomain
-        return NextResponse.rewrite(new URL(`/${subdomain}${url.pathname}`, req.url));
-      }
-    } catch (error) {
-      console.error('Middleware: Error fetching tenant:', error);
-    }
+  const hostname = (req.headers.get("host") || "").split(":")[0];
+  const isApex = APEX_HOSTS.has(hostname);
+  const subdomain = isApex ? "" : hostname.split(".")[0] ?? "";
+
+  if (isApex) {
+    return NextResponse.next();
   }
 
-  console.log('Middleware: Invalid subdomain or domain, returning 404');
-  // If none of the above conditions are met, return a 404 response
+  if (!subdomain || isReservedSubdomain(subdomain)) {
+    return new NextResponse(null, { status: 404 });
+  }
+
+  try {
+    const response = await fetch(
+      `${req.nextUrl.origin}/api/tenant?subdomain=${encodeURIComponent(subdomain)}`
+    );
+
+    if (response.ok) {
+      return NextResponse.rewrite(new URL(`/${subdomain}${pathname}`, req.url));
+    }
+  } catch (error) {
+    console.error("Middleware: Error fetching tenant:", error);
+  }
+
   return new NextResponse(null, { status: 404 });
 }
