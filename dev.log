@@ -1,0 +1,33 @@
+
+> multitenant-2024@0.1.0 dev
+> next dev
+
+  ▲ Next.js 14.2.5
+  - Local:        http://localhost:3000
+
+ ✓ Starting...
+ ✓ Ready in 1803ms
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 664ms (74 modules)
+ ○ Compiling / ...
+ ✓ Compiled / in 11.4s (1457 modules)
+HomePage: could not load live campaigns PrismaClientKnownRequestError:
+Invalid `prisma.campaign.findMany()` invocation:
+
+
+
+    at vn.handleRequestError (/app/node_modules/@prisma/client/runtime/client.js:65:8643)
+    at vn.handleAndLogRequestError (/app/node_modules/@prisma/client/runtime/client.js:65:7932)
+    at vn.request (/app/node_modules/@prisma/client/runtime/client.js:65:7639)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async a (/app/node_modules/@prisma/client/runtime/client.js:99:6935)
+    at async getPlatformProjects (webpack-internal:///(rsc)/./lib/campaigns.ts:26:23)
+    at async HomePage (webpack-internal:///(rsc)/./app/page.tsx:19:20) {
+  code: 'ECONNREFUSED',
+  meta: { modelName: 'Campaign' },
+  clientVersion: '7.10.0'
+}
+[Sentinel] Default global identify ingestion is active but not recommended. Get your ingestion url from your project settings page (e.g. https://kv.better-auth.com/projects/{id}) and configure sentinelClient({ identifyUrl }) with it.
+ ✓ Compiled in 3.7s (323 modules)
+ GET / 200 in 15220ms
+[?25h

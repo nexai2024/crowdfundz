@@ -88,11 +88,177 @@ model Campaign {
   backers         Backer[]
   phases          Phase[]
   faqs            Faq[]
+  metrics         BuildMetric[]
+  ideUpdates      IdeUpdate[]
+  sandboxes       DemoSandbox[]
+  polls           GovernancePoll[]
+  bounties        Bounty[]
+  compliance      ComplianceCheck?
+  sponsors        SponsorSlot[]
+  collaborations  CollaborationLoop[]
+  paywalls        MilestonePaywall[]
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
   @@unique([creatorId, slug])
   @@index([creatorId])
+}
+
+model BuildMetric {
+  id          String   @id @default(cuid())
+  campaignId  String
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  pageViews   Int      @default(0)
+  uniqueUsers Int      @default(0)
+  commitsCount Int     @default(0)
+  weeklyGrowth Float   @default(0.0)
+  recordedAt  DateTime @default(now())
+
+  @@index([campaignId])
+}
+
+model IdeApiKey {
+  id          String   @id @default(cuid())
+  userId      String
+  key         String   @unique
+  name        String   @default("VSCode Extension")
+  createdAt   DateTime @default(now())
+}
+
+model IdeUpdate {
+  id          String   @id @default(cuid())
+  campaignId  String
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  editor      String   @default("VS Code")
+  commitHash  String?
+  commitMessage String
+  linesAdded  Int      @default(0)
+  linesDeleted Int     @default(0)
+  fileChanged String?
+  createdAt   DateTime @default(now())
+
+  @@index([campaignId])
+}
+
+model DemoSandbox {
+  id          String   @id @default(cuid())
+  campaignId  String
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  title       String
+  sandboxUrl  String
+  embedCode   String?  @db.Text
+  environment String   @default("Node.js / React")
+  status      String   @default("RUNNING")
+  createdAt   DateTime @default(now())
+
+  @@index([campaignId])
+}
+
+model GovernancePoll {
+  id          String           @id @default(cuid())
+  campaignId  String
+  campaign    Campaign         @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  title       String
+  description String           @db.Text
+  options     String[]
+  status      String           @default("OPEN")
+  expiresAt   DateTime?
+  votes       GovernanceVote[]
+  createdAt   DateTime         @default(now())
+
+  @@index([campaignId])
+}
+
+model GovernanceVote {
+  id          String         @id @default(cuid())
+  pollId      String
+  poll        GovernancePoll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  backerEmail String
+  optionIndex Int
+  weight      Int            @default(1)
+  createdAt   DateTime       @default(now())
+
+  @@index([pollId])
+}
+
+model Bounty {
+  id          String             @id @default(cuid())
+  campaignId  String
+  campaign    Campaign           @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  title       String
+  description String             @db.Text
+  rewardUsd   Int
+  status      String             @default("OPEN")
+  submissions BountySubmission[]
+  createdAt   DateTime           @default(now())
+
+  @@index([campaignId])
+}
+
+model BountySubmission {
+  id            String   @id @default(cuid())
+  bountyId      String
+  bounty        Bounty   @relation(fields: [bountyId], references: [id], onDelete: Cascade)
+  contributorName String
+  contributorEmail String
+  submissionUrl String
+  status        String   @default("PENDING")
+  createdAt     DateTime @default(now())
+
+  @@index([bountyId])
+}
+
+model ComplianceCheck {
+  id                String   @id @default(cuid())
+  campaignId        String   @unique
+  campaign          Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  disclaimerVerified Boolean @default(true)
+  kycStatus         String   @default("VERIFIED")
+  jurisdiction      String   @default("US-DELAWARE")
+  taxFormFiled      Boolean  @default(true)
+  lastAuditedAt     DateTime @default(now())
+}
+
+model SponsorSlot {
+  id            String   @id @default(cuid())
+  campaignId    String
+  campaign      Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  sponsorName   String
+  logoUrl       String
+  websiteUrl    String
+  tierName      String   @default("Gold Sponsor")
+  amountPaidUsd Int
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  @@index([campaignId])
+}
+
+model CollaborationLoop {
+  id                String   @id @default(cuid())
+  campaignId        String
+  campaign          Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  partnerSubdomain  String
+  partnerSlug       String
+  partnerTitle      String
+  discountPercentage Int     @default(10)
+  createdAt         DateTime @default(now())
+
+  @@index([campaignId])
+}
+
+model MilestonePaywall {
+  id                String   @id @default(cuid())
+  campaignId        String
+  campaign          Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  title             String
+  description       String   @db.Text
+  requiredRaisedUsd Int
+  contentUrl        String
+  locked            Boolean  @default(true)
+  createdAt         DateTime @default(now())
+
+  @@index([campaignId])
 }
 
 model Phase {

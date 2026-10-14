@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowUpRight, Zap } from "lucide-react";
 import ClaimSubdomainPrompt from "@/components/claim-subdomain-prompt";
 import NewProjectForm from "@/components/new-project-form";
+import PitchRefiner from "@/components/pitch-refiner";
 import type { CreatorHomeData } from "@/lib/landing-types";
 
 const STATUS_LABEL = {
@@ -132,11 +133,16 @@ export default function CreatorHome({
           </div>
         )}
 
-        <div className="mt-10">
+        <div className="mt-10 grid lg:grid-cols-2 gap-8">
           <NewProjectForm
             subdomain={creator.subdomain ?? ""}
             pathPrefix={creator.projectPathPrefix}
             signedIn={signedIn}
+          />
+          <PitchRefiner
+            initialTitle={featured?.title}
+            initialTagline={featured?.tagline}
+            initialGoal={featured?.targetGoal}
           />
         </div>
       </section>

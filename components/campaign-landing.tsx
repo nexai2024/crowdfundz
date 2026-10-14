@@ -12,6 +12,17 @@ import {
 } from "lucide-react";
 import type { CampaignLandingData, CampaignTierView } from "@/lib/landing-types";
 
+import AnalyticsDashboard from "@/components/analytics-dashboard";
+import IdeIntegration from "@/components/ide-integration";
+import DemoSandbox from "@/components/demo-sandbox";
+import TokenizedGovernance from "@/components/tokenized-governance";
+import PitchRefiner from "@/components/pitch-refiner";
+import BountyBoard from "@/components/bounty-board";
+import ComplianceSystem from "@/components/compliance-system";
+import SponsorSpace from "@/components/sponsor-space";
+import CollaborationLoops from "@/components/collaboration-loops";
+import MilestonePaywall from "@/components/milestone-paywall";
+
 type BackerState = CampaignLandingData["backers"][number];
 
 export default function CampaignLanding({ campaign }: { campaign: CampaignLandingData }) {
@@ -185,6 +196,26 @@ export default function CampaignLanding({ campaign }: { campaign: CampaignLandin
               Explore the roadmap ↓
             </a>
           )}
+        </div>
+      </section>
+
+      <section className="px-6 py-12 max-w-6xl mx-auto space-y-8">
+        <AnalyticsDashboard metrics={campaign.metrics} />
+        <div className="grid lg:grid-cols-2 gap-8">
+          <IdeIntegration initialUpdates={campaign.ideUpdates} />
+          <DemoSandbox sandboxes={campaign.sandboxes} />
+        </div>
+        <div className="grid lg:grid-cols-2 gap-8">
+          <TokenizedGovernance polls={campaign.polls} />
+          <MilestonePaywall totalRaised={totalRaised} paywalls={campaign.paywalls} />
+        </div>
+        <div className="grid lg:grid-cols-2 gap-8">
+          <BountyBoard bounties={campaign.bounties} />
+          <SponsorSpace sponsors={campaign.sponsors} />
+        </div>
+        <div className="grid lg:grid-cols-2 gap-8">
+          <CollaborationLoops collaborations={campaign.collaborations} />
+          <ComplianceSystem compliance={campaign.compliance} />
         </div>
       </section>
 
