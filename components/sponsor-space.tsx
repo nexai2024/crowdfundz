@@ -11,28 +11,7 @@ export default function SponsorSpace({
   campaignId?: string;
   sponsors?: SponsorSlotView[];
 }) {
-  const [sponsorList, setSponsorList] = useState<SponsorSlotView[]>(
-    sponsors.length > 0
-      ? sponsors
-      : [
-          {
-            id: "s1",
-            sponsorName: "Neon Postgres",
-            logoUrl: "https://neon.tech/favicon.ico",
-            websiteUrl: "https://neon.tech",
-            tierName: "Gold Sponsor",
-            amountPaidUsd: 500,
-          },
-          {
-            id: "s2",
-            sponsorName: "Vercel Edge",
-            logoUrl: "https://vercel.com/favicon.ico",
-            websiteUrl: "https://vercel.com",
-            tierName: "Silver Sponsor",
-            amountPaidUsd: 250,
-          },
-        ]
-  );
+  const [sponsorList, setSponsorList] = useState<SponsorSlotView[]>(sponsors);
 
   const [sponsorName, setSponsorName] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
@@ -80,6 +59,8 @@ export default function SponsorSpace({
       setIsSubmitting(false);
     }
   };
+
+  if (sponsorList.length === 0) return null;
 
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur">

@@ -9,12 +9,7 @@ export default function ComplianceSystem({
 }: {
   compliance?: ComplianceCheckView | null;
 }) {
-  const comp = compliance || {
-    disclaimerVerified: true,
-    kycStatus: "VERIFIED",
-    jurisdiction: "US-DELAWARE",
-    taxFormFiled: true,
-  };
+  if (!compliance) return null;
 
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur">
@@ -39,13 +34,13 @@ export default function ComplianceSystem({
         <div className="p-3 rounded-xl border border-slate-800 bg-slate-950">
           <div className="text-slate-500 text-[10px] uppercase mb-1">KYC Status</div>
           <div className="text-white font-bold flex items-center gap-1">
-            <Lock className="h-3.5 w-3.5 text-emerald-400" /> {comp.kycStatus}
+            <Lock className="h-3.5 w-3.5 text-emerald-400" /> {compliance.kycStatus}
           </div>
         </div>
 
         <div className="p-3 rounded-xl border border-slate-800 bg-slate-950">
           <div className="text-slate-500 text-[10px] uppercase mb-1">Jurisdiction</div>
-          <div className="text-slate-300 font-bold">{comp.jurisdiction}</div>
+          <div className="text-slate-300 font-bold">{compliance.jurisdiction}</div>
         </div>
       </div>
     </div>

@@ -16,7 +16,6 @@ import AnalyticsDashboard from "@/components/analytics-dashboard";
 import IdeIntegration from "@/components/ide-integration";
 import DemoSandbox from "@/components/demo-sandbox";
 import TokenizedGovernance from "@/components/tokenized-governance";
-import PitchRefiner from "@/components/pitch-refiner";
 import BountyBoard from "@/components/bounty-board";
 import ComplianceSystem from "@/components/compliance-system";
 import SponsorSpace from "@/components/sponsor-space";
@@ -46,6 +45,23 @@ export default function CampaignLanding({ campaign }: { campaign: CampaignLandin
   const entryTier = campaign.tiers[0];
   const storyParagraphs = campaign.story.split(/\n\n+/).filter(Boolean);
   const activePhase = campaign.phases[activePhaseIndex];
+  const ideUpdates = campaign.ideUpdates ?? [];
+  const sandboxes = campaign.sandboxes ?? [];
+  const polls = campaign.polls ?? [];
+  const paywalls = campaign.paywalls ?? [];
+  const bounties = campaign.bounties ?? [];
+  const sponsors = campaign.sponsors ?? [];
+  const collaborations = campaign.collaborations ?? [];
+  const hasFeaturePanels =
+    campaign.metrics != null ||
+    ideUpdates.length > 0 ||
+    sandboxes.length > 0 ||
+    polls.length > 0 ||
+    paywalls.length > 0 ||
+    bounties.length > 0 ||
+    sponsors.length > 0 ||
+    collaborations.length > 0 ||
+    campaign.compliance != null;
 
   const handleCheckout = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -199,25 +215,25 @@ export default function CampaignLanding({ campaign }: { campaign: CampaignLandin
         </div>
       </section>
 
-      <section className="px-6 py-12 max-w-6xl mx-auto space-y-8">
-        <AnalyticsDashboard metrics={campaign.metrics} />
-        <div className="grid lg:grid-cols-2 gap-8">
-          <IdeIntegration initialUpdates={campaign.ideUpdates} />
-          <DemoSandbox sandboxes={campaign.sandboxes} />
-        </div>
-        <div className="grid lg:grid-cols-2 gap-8">
-          <TokenizedGovernance polls={campaign.polls} />
-          <MilestonePaywall totalRaised={totalRaised} paywalls={campaign.paywalls} />
-        </div>
-        <div className="grid lg:grid-cols-2 gap-8">
-          <BountyBoard bounties={campaign.bounties} />
-          <SponsorSpace sponsors={campaign.sponsors} />
-        </div>
-        <div className="grid lg:grid-cols-2 gap-8">
-          <CollaborationLoops collaborations={campaign.collaborations} />
-          <ComplianceSystem compliance={campaign.compliance} />
-        </div>
-      </section>
+      {hasFeaturePanels && (
+        <section className="px-6 py-12 max-w-6xl mx-auto grid gap-8 lg:grid-cols-2">
+          {campaign.metrics != null && (
+            <div className="lg:col-span-2">
+              <AnalyticsDashboard metrics={campaign.metrics} />
+            </div>
+          )}
+          {ideUpdates.length > 0 && <IdeIntegration initialUpdates={ideUpdates} />}
+          {sandboxes.length > 0 && <DemoSandbox sandboxes={sandboxes} />}
+          {polls.length > 0 && <TokenizedGovernance polls={polls} />}
+          {paywalls.length > 0 && (
+            <MilestonePaywall totalRaised={totalRaised} paywalls={paywalls} />
+          )}
+          {bounties.length > 0 && <BountyBoard bounties={bounties} />}
+          {sponsors.length > 0 && <SponsorSpace sponsors={sponsors} />}
+          {collaborations.length > 0 && <CollaborationLoops collaborations={collaborations} />}
+          {campaign.compliance != null && <ComplianceSystem compliance={campaign.compliance} />}
+        </section>
+      )}
 
       <section className="px-6 py-16 border-t border-slate-900 bg-slate-950/40">
         <div className="max-w-3xl mx-auto text-left">

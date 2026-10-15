@@ -9,15 +9,9 @@ export default function DemoSandbox({
 }: {
   sandboxes?: DemoSandboxView[];
 }) {
-  const activeSandbox = sandboxes[0] || {
-    id: "demo-1",
-    title: "Live Interactive Web Runner",
-    sandboxUrl: "https://stackblitz.com",
-    environment: "Node.js / Next.js 14",
-    status: "RUNNING",
-  };
-
   const [isRunning, setIsRunning] = useState(false);
+  const activeSandbox = sandboxes[0];
+  if (!activeSandbox) return null;
 
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur">

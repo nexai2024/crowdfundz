@@ -16,28 +16,7 @@ export default function IdeIntegration({
   const [fileChanged, setFileChanged] = useState("src/app.ts");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const defaultFeed: IdeUpdateView[] = updates.length > 0 ? updates : [
-    {
-      id: "1",
-      editor: "VS Code",
-      commitHash: "8f3a12",
-      commitMessage: "feat: implement real-time backer event sync",
-      linesAdded: 142,
-      linesDeleted: 18,
-      fileChanged: "lib/sync.ts",
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: "2",
-      editor: "Cursor",
-      commitHash: "4b91e0",
-      commitMessage: "fix: prevent double-payout race conditions",
-      linesAdded: 35,
-      linesDeleted: 12,
-      fileChanged: "app/api/checkout/route.ts",
-      createdAt: new Date(Date.now() - 3600000).toISOString(),
-    },
-  ];
+  if (updates.length === 0) return null;
 
   const handleSimulateUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,7 +89,7 @@ export default function IdeIntegration({
       </div>
 
       <div className="space-y-3 mb-6">
-        {defaultFeed.map((up) => (
+        {updates.map((up) => (
           <div
             key={up.id}
             className="rounded-xl border border-slate-800/80 bg-slate-950/80 p-3 text-xs font-mono flex items-center justify-between gap-4"

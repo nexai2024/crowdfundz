@@ -9,10 +9,7 @@ export default function AnalyticsDashboard({
 }: {
   metrics?: BuildMetricView | null;
 }) {
-  const pageViews = metrics?.pageViews ?? 1240;
-  const uniqueUsers = metrics?.uniqueUsers ?? 480;
-  const commitsCount = metrics?.commitsCount ?? 42;
-  const weeklyGrowth = metrics?.weeklyGrowth ?? 18.5;
+  if (!metrics) return null;
 
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur">
@@ -33,7 +30,7 @@ export default function AnalyticsDashboard({
             <span>Page Views</span>
           </div>
           <div className="font-mono text-xl font-bold text-white">
-            {pageViews.toLocaleString()}
+            {metrics.pageViews.toLocaleString()}
           </div>
         </div>
 
@@ -43,7 +40,7 @@ export default function AnalyticsDashboard({
             <span>Unique Visitors</span>
           </div>
           <div className="font-mono text-xl font-bold text-white">
-            {uniqueUsers.toLocaleString()}
+            {metrics.uniqueUsers.toLocaleString()}
           </div>
         </div>
 
@@ -53,7 +50,7 @@ export default function AnalyticsDashboard({
             <span>Git Commits</span>
           </div>
           <div className="font-mono text-xl font-bold text-white">
-            {commitsCount}
+            {metrics.commitsCount}
           </div>
         </div>
 
@@ -63,7 +60,7 @@ export default function AnalyticsDashboard({
             <span>Weekly Growth</span>
           </div>
           <div className="font-mono text-xl font-bold text-emerald-400">
-            +{weeklyGrowth}%
+            +{metrics.weeklyGrowth}%
           </div>
         </div>
       </div>

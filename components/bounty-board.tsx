@@ -11,26 +11,7 @@ export default function BountyBoard({
   campaignId?: string;
   bounties?: BountyView[];
 }) {
-  const [bountyList, setBountyList] = useState<BountyView[]>(
-    bounties.length > 0
-      ? bounties
-      : [
-          {
-            id: "b1",
-            title: "Dark Mode Theme Extension",
-            description: "Implement high-contrast custom dark mode toggle in frontend client.",
-            rewardUsd: 150,
-            status: "OPEN",
-          },
-          {
-            id: "b2",
-            title: "PostgreSQL Migration Script",
-            description: "Optimize high-volume query indexing for campaign backer wall loading.",
-            rewardUsd: 300,
-            status: "IN_REVIEW",
-          },
-        ]
-  );
+  const [bountyList, setBountyList] = useState<BountyView[]>(bounties);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -71,6 +52,8 @@ export default function BountyBoard({
       setIsSubmitting(false);
     }
   };
+
+  if (bountyList.length === 0) return null;
 
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur">

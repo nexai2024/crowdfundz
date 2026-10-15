@@ -11,19 +11,7 @@ export default function CollaborationLoops({
   campaignId?: string;
   collaborations?: CollaborationLoopView[];
 }) {
-  const [collabList, setCollabList] = useState<CollaborationLoopView[]>(
-    collaborations.length > 0
-      ? collaborations
-      : [
-          {
-            id: "c1",
-            partnerSubdomain: "protocol",
-            partnerSlug: "protocol100",
-            partnerTitle: "Protocol100 Auth Suite",
-            discountPercentage: 15,
-          },
-        ]
-  );
+  const [collabList, setCollabList] = useState<CollaborationLoopView[]>(collaborations);
 
   const [partnerSubdomain, setPartnerSubdomain] = useState("");
   const [partnerSlug, setPartnerSlug] = useState("");
@@ -67,6 +55,8 @@ export default function CollaborationLoops({
       console.error(err);
     }
   };
+
+  if (collabList.length === 0) return null;
 
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur">

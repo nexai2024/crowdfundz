@@ -11,19 +11,11 @@ export default function TokenizedGovernance({
   campaignId?: string;
   polls?: GovernancePollView[];
 }) {
-  const activePoll: GovernancePollView = polls[0] || {
-    id: "poll-1",
-    title: "Q3 Feature Priority: Next Native Integration",
-    description: "Verified backers vote on which feature module gets built first in Sprint 4.",
-    options: ["AI Automated Docs Generator", "Native Slack / Discord Webhooks", "Zero-Knowledge Vault Export"],
-    status: "OPEN",
-    expiresAt: null,
-    votesCount: 28,
-  };
-
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
   const [voterEmail, setVoterEmail] = useState("");
+  const activePoll = polls[0];
+  if (!activePoll) return null;
 
   const handleVote = async (e: React.FormEvent) => {
     e.preventDefault();

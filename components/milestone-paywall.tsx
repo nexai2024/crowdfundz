@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { Lock, Unlock, Key, ArrowUpRight } from "lucide-react";
 import type { MilestonePaywallView } from "@/lib/landing-types";
 
@@ -11,24 +11,7 @@ export default function MilestonePaywall({
   totalRaised?: number;
   paywalls?: MilestonePaywallView[];
 }) {
-  const items: MilestonePaywallView[] = paywalls.length > 0 ? paywalls : [
-    {
-      id: "pw1",
-      title: "Sprint 1 Architecture Specs & DB Schema",
-      description: "Full production Prisma schemas and infrastructure blueprint downloads.",
-      requiredRaisedUsd: 2000,
-      contentUrl: "https://github.com",
-      locked: totalRaised < 2000,
-    },
-    {
-      id: "pw2",
-      title: "Early Access SDK & Private NPM Package",
-      description: "Direct access token to early release candidate packages.",
-      requiredRaisedUsd: 5000,
-      contentUrl: "https://npmjs.com",
-      locked: totalRaised < 5000,
-    },
-  ];
+  if (paywalls.length === 0) return null;
 
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur">
@@ -43,18 +26,20 @@ export default function MilestonePaywall({
       </div>
 
       <div className="space-y-3">
-        {items.map((pw) => (
+        {paywalls.map((pw) => {
+          const locked = totalRaised < pw.requiredRaisedUsd;
+          return (
           <div
             key={pw.id}
             className={`p-4 rounded-xl border font-mono text-xs transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-              !pw.locked
+              !locked
                 ? "border-emerald-500/50 bg-emerald-500/10 text-white"
                 : "border-slate-800 bg-slate-950 text-slate-400"
             }`}
           >
             <div>
               <div className="font-bold flex items-center gap-2 text-sm">
-                {!pw.locked ? (
+                {!locked ? (
                   <Unlock className="h-4 w-4 text-emerald-400 shrink-0" />
                 ) : (
                   <Lock className="h-4 w-4 text-slate-500 shrink-0" />
@@ -68,7 +53,7 @@ export default function MilestonePaywall({
             </div>
 
             <div className="shrink-0">
-              {!pw.locked ? (
+              {!locked ? (
                 <a
                   href={pw.contentUrl}
                   target="_blank"
@@ -84,7 +69,8 @@ export default function MilestonePaywall({
               )}
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
