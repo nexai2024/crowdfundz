@@ -29,14 +29,14 @@ export default function MilestonePaywall({
         {paywalls.map((pw) => {
           const locked = totalRaised < pw.requiredRaisedUsd;
           return (
-          <div
-            key={pw.id}
-            className={`p-4 rounded-xl border font-mono text-xs transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-              !locked
-                ? "border-emerald-500/50 bg-emerald-500/10 text-white"
-                : "border-slate-800 bg-slate-950 text-slate-400"
-            }`}
-          >
+            <div
+              key={pw.id}
+              className={`p-4 rounded-xl border font-mono text-xs transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                !locked
+                  ? "border-emerald-500/50 bg-emerald-500/10 text-white"
+                  : "border-slate-800 bg-slate-950 text-slate-400"
+              }`}
+            >
             <div>
               <div className="font-bold flex items-center gap-2 text-sm">
                 {!locked ? (
