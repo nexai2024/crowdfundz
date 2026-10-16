@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
 import { isAllowedAppOrigin } from "@/lib/hosts";
+import { sameOriginOrForbid } from "@/lib/http";
 
 type CheckoutBody = {
   tierId?: string;
@@ -15,9 +16,12 @@ type CheckoutBody = {
 };
 
 export async function POST(req: Request) {
+  const originBlock = sameOriginOrForbid(req);
+  if (originBlock) return originBlock;
+
   try {
     const body = (await req.json()) as CheckoutBody;
-    const email = body.email?.trim() || "";
+    const email = body.email?.trim().toLowerCase() || "";
     const subdomain = body.subdomain?.trim().toLowerCase() || "";
     const slug = body.slug?.trim() || "";
 
@@ -47,6 +51,21 @@ export async function POST(req: Request) {
     if (!stripe) {
       return NextResponse.json(
         { error: "Payments are not configured yet. Add STRIPE_SECRET_KEY to turn checkout on." },
+        { status: 503 }
+      );
+    }
+
+    const destination = tier.campaign.creator.stripeConnectAccountId;
+    if (!destination) {
+      return NextResponse.json(
+        { error: "This creator has not connected a payout account yet." },
+        { status: 503 }
+      );
+    }
+    const account = await stripe.accounts.retrieve(destination);
+    if (!account.charges_enabled) {
+      return NextResponse.json(
+        { error: "This creator has not finished payout setup." },
         { status: 503 }
       );
     }
@@ -90,6 +109,11 @@ export async function POST(req: Request) {
       ],
       success_url: `${origin}${path}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}${path}#tiers`,
+      payment_intent_data: {
+        receipt_email: email,
+        on_behalf_of: destination,
+        transfer_data: { destination },
+      },
       metadata: {
         backerId: backer.id,
         campaignId: tier.campaignId,
@@ -104,7 +128,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ url: session.url });
   } catch (error) {
     console.error("Checkout session error:", error);
-    const message = error instanceof Error ? error.message : "Checkout failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: "Checkout failed" }, { status: 500 });
   }
 }

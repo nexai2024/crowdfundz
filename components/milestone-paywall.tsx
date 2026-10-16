@@ -53,7 +53,7 @@ export default function MilestonePaywall({
             </div>
 
             <div className="shrink-0">
-              {!locked ? (
+              {!locked && pw.contentUrl ? (
                 <a
                   href={pw.contentUrl}
                   target="_blank"
@@ -64,7 +64,7 @@ export default function MilestonePaywall({
                 </a>
               ) : (
                 <span className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-500 text-[10px] font-bold">
-                  Locked
+                  {locked ? "Locked" : "For confirmed backers"}
                 </span>
               )}
             </div>

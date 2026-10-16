@@ -29,11 +29,28 @@ export default async function SuccessPage({ params, searchParams }: PageProps) {
   const backer = searchParams.session_id
     ? await prisma.backer.findUnique({
         where: { stripeSessionId: searchParams.session_id },
+        include: { tier: true },
       })
     : null;
+  const ownsPledge = backer?.campaignId === campaign.id ? backer : null;
+  const entitled = Boolean(ownsPledge?.status === "SUCCEEDED" && ownsPledge.entitledAt);
+  const paywalls = entitled
+    ? await prisma.milestonePaywall.findMany({
+        where: { campaignId: campaign.id, requiredRaisedUsd: { lte: campaign.totalRaised } },
+        orderBy: { requiredRaisedUsd: "asc" },
+      })
+    : [];
+  const statusLabel =
+    ownsPledge?.status === "REFUNDED"
+      ? "REFUNDED"
+      : ownsPledge?.status === "DISPUTED"
+        ? "IN REVIEW"
+        : entitled
+          ? "CONFIRMED"
+          : "PROCESSING";
 
-  const backerNumber = backer?.backerNumber;
-  const backerName = backer?.name || "Fellow builder";
+  const backerNumber = ownsPledge?.backerNumber;
+  const backerName = ownsPledge?.name || "Fellow builder";
   const host = headers().get("host") || "";
   const onCreatorHost = isOnCreatorHost(host, params.subdomain);
   const campaignHref = onCreatorHost ? `/${params.slug}` : `/${params.subdomain}/${params.slug}`;
@@ -72,7 +89,7 @@ export default async function SuccessPage({ params, searchParams }: PageProps) {
         <div className="my-8 p-6 bg-slate-950/80 border border-slate-800 rounded-2xl text-left relative">
           <div className="flex justify-between items-center text-xs font-mono text-slate-500 mb-3 border-b border-slate-900 pb-2">
             <span>BACKER BADGE</span>
-            <span className="text-emerald-400">STATUS: CONFIRMED</span>
+            <span className="text-emerald-400">STATUS: {statusLabel}</span>
           </div>
           <div className="text-xl font-bold text-white font-mono">
             {backerNumber ? `BACKER #${backerNumber}` : campaign.title}
@@ -82,6 +99,24 @@ export default async function SuccessPage({ params, searchParams }: PageProps) {
             <ShieldCheck className="w-4 h-4 text-emerald-500" />
             <span>Placement on this project&apos;s backer wall</span>
           </div>
+          {entitled && ownsPledge?.tier.perks.length ? (
+            <ul className="mt-4 space-y-1 text-xs text-slate-300">
+              {ownsPledge.tier.perks.map((perk) => (
+                <li key={perk}>{perk}</li>
+              ))}
+            </ul>
+          ) : null}
+          {paywalls.length > 0 && (
+            <ul className="mt-4 space-y-2 text-xs">
+              {paywalls.map((paywall) => (
+                <li key={paywall.id}>
+                  <a href={paywall.contentUrl} className="text-emerald-300 underline" target="_blank" rel="noreferrer">
+                    {paywall.title}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">

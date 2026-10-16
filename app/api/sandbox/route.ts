@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { ownerMutation } from "@/lib/http";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -30,6 +31,9 @@ export async function POST(req: Request) {
     if (!campaignId || !title || !sandboxUrl) {
       return NextResponse.json({ error: "Missing required sandbox parameters" }, { status: 400 });
     }
+
+    const owner = await ownerMutation(req, campaignId);
+    if (owner) return owner;
 
     const sandbox = await prisma.demoSandbox.create({
       data: {

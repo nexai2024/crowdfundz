@@ -1,32 +1,27 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { assertCampaignOwner } from "@/lib/studio";
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const campaignId = searchParams.get("campaignId");
-
+  const campaignId = new URL(req.url).searchParams.get("campaignId");
   if (!campaignId) {
     return NextResponse.json({ error: "campaignId is required" }, { status: 400 });
   }
 
+  const owner = await assertCampaignOwner(campaignId);
+  if (owner) return owner;
+
   try {
-    let check = await prisma.complianceCheck.findUnique({
-      where: { campaignId },
-    });
-
-    if (!check) {
-      check = await prisma.complianceCheck.create({
-        data: {
-          campaignId,
-          disclaimerVerified: true,
-          kycStatus: "VERIFIED",
-          jurisdiction: "US-DELAWARE",
-          taxFormFiled: true,
-        },
-      });
-    }
-
-    return NextResponse.json(check);
+    const check = await prisma.complianceCheck.findUnique({ where: { campaignId } });
+    return NextResponse.json(
+      check ?? {
+        campaignId,
+        disclaimerVerified: false,
+        kycStatus: "UNVERIFIED",
+        jurisdiction: "UNSET",
+        taxFormFiled: false,
+      }
+    );
   } catch (error) {
     console.error("Compliance GET error:", error);
     return NextResponse.json({ error: "Failed to fetch compliance status" }, { status: 500 });

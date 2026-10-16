@@ -41,6 +41,29 @@ export function creatorUrl(host: string, subdomain: string, path = ""): string {
   return `${protocol}://${subdomain}.${root}${portSuffix}${path}`;
 }
 
+export function isSameOriginRequest(request: Request): boolean {
+  const fetchSite = request.headers.get("sec-fetch-site");
+  if (fetchSite && fetchSite !== "same-origin") return false;
+
+  const origin = request.headers.get("origin");
+  if (!origin || !isAllowedAppOrigin(origin)) return false;
+
+  const forwarded = request.headers.get("x-forwarded-host") || request.headers.get("host");
+  if (!forwarded) return false;
+
+  try {
+    const url = new URL(origin);
+    const host = forwarded.split(",")[0]?.trim() ?? "";
+    const [hostname, port] = host.split(":");
+    if (url.hostname !== hostname) return false;
+    const originPort = url.port || (url.protocol === "https:" ? "443" : "80");
+    const requestPort = port || (url.protocol === "https:" ? "443" : "80");
+    return originPort === requestPort;
+  } catch {
+    return false;
+  }
+}
+
 export function isAllowedAppOrigin(origin: string): boolean {
   try {
     const url = new URL(origin);

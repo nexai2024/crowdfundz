@@ -13,6 +13,7 @@ export default function TokenizedGovernance({
 }) {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
+  const [voteError, setVoteError] = useState("");
   const [voterEmail, setVoterEmail] = useState("");
   const activePoll = polls[0];
   if (!activePoll) return null;
@@ -21,22 +22,27 @@ export default function TokenizedGovernance({
     e.preventDefault();
     if (selectedOption === null || !voterEmail) return;
 
+    setVoteError("");
     try {
-      if (campaignId) {
-        await fetch("/api/governance", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            pollId: activePoll.id,
-            backerEmail: voterEmail,
-            optionIndex: selectedOption,
-            weight: 1,
-          }),
-        });
+      const response = await fetch("/api/governance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pollId: activePoll.id,
+          campaignId,
+          backerEmail: voterEmail,
+          optionIndex: selectedOption,
+        }),
+      });
+      const data = (await response.json().catch(() => null)) as { error?: string } | null;
+      if (!response.ok) {
+        setVoteError(data?.error || "Could not record that vote");
+        return;
       }
       setHasVoted(true);
     } catch (err) {
       console.error(err);
+      setVoteError("Could not record that vote");
     }
   };
 
@@ -93,6 +99,7 @@ export default function TokenizedGovernance({
                 Cast Weighted Vote
               </button>
             </div>
+            {voteError && <p className="text-xs text-rose-300">{voteError}</p>}
           </form>
         ) : (
           <div className="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-mono text-center">

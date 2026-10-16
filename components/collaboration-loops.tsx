@@ -1,62 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
-import { Network, ArrowRight, Link as LinkIcon } from "lucide-react";
+import { Network, Link as LinkIcon } from "lucide-react";
 import type { CollaborationLoopView } from "@/lib/landing-types";
 
 export default function CollaborationLoops({
-  campaignId,
   collaborations = [],
 }: {
-  campaignId?: string;
   collaborations?: CollaborationLoopView[];
 }) {
-  const [collabList, setCollabList] = useState<CollaborationLoopView[]>(collaborations);
-
-  const [partnerSubdomain, setPartnerSubdomain] = useState("");
-  const [partnerSlug, setPartnerSlug] = useState("");
-  const [partnerTitle, setPartnerTitle] = useState("");
-
-  const handleAddCollab = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!partnerSubdomain || !partnerSlug || !partnerTitle) return;
-
-    try {
-      if (campaignId) {
-        const res = await fetch("/api/collaborations", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            campaignId,
-            partnerSubdomain,
-            partnerSlug,
-            partnerTitle,
-            discountPercentage: 10,
-          }),
-        });
-        const newCollab = await res.json();
-        setCollabList([newCollab, ...collabList]);
-      } else {
-        setCollabList([
-          {
-            id: Date.now().toString(),
-            partnerSubdomain,
-            partnerSlug,
-            partnerTitle,
-            discountPercentage: 10,
-          },
-          ...collabList,
-        ]);
-      }
-      setPartnerSubdomain("");
-      setPartnerSlug("");
-      setPartnerTitle("");
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  if (collabList.length === 0) return null;
+  if (collaborations.length === 0) return null;
 
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur">
@@ -71,7 +23,7 @@ export default function CollaborationLoops({
       </div>
 
       <div className="space-y-3 mb-6">
-        {collabList.map((c) => (
+        {collaborations.map((c) => (
           <div
             key={c.id}
             className="p-4 rounded-xl border border-slate-800 bg-slate-950/80 font-mono text-xs flex items-center justify-between gap-4"
@@ -92,39 +44,6 @@ export default function CollaborationLoops({
           </div>
         ))}
       </div>
-
-      <form onSubmit={handleAddCollab} className="grid sm:grid-cols-3 gap-2">
-        <input
-          type="text"
-          required
-          value={partnerSubdomain}
-          onChange={(e) => setPartnerSubdomain(e.target.value)}
-          placeholder="Partner Subdomain"
-          className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 font-mono"
-        />
-        <input
-          type="text"
-          required
-          value={partnerSlug}
-          onChange={(e) => setPartnerSlug(e.target.value)}
-          placeholder="Partner Campaign Slug"
-          className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 font-mono"
-        />
-        <input
-          type="text"
-          required
-          value={partnerTitle}
-          onChange={(e) => setPartnerTitle(e.target.value)}
-          placeholder="Partner Project Title"
-          className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 font-mono"
-        />
-        <button
-          type="submit"
-          className="sm:col-span-3 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs font-mono rounded-lg transition flex items-center justify-center gap-1"
-        >
-          Link Partner Collaboration Loop <ArrowRight className="h-3.5 w-3.5" />
-        </button>
-      </form>
     </div>
   );
 }

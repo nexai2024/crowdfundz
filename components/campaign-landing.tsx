@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ShieldCheck,
@@ -42,6 +42,14 @@ export default function CampaignLanding({ campaign }: { campaign: CampaignLandin
     100,
     Math.round((totalRaised / Math.max(campaign.targetGoal, 1)) * 100)
   );
+  useEffect(() => {
+    void fetch("/api/analytics", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ campaignId: campaign.id, kind: "pageview" }),
+    });
+  }, [campaign.id]);
+
   const entryTier = campaign.tiers[0];
   const storyParagraphs = campaign.story.split(/\n\n+/).filter(Boolean);
   const activePhase = campaign.phases[activePhaseIndex];
@@ -215,6 +223,17 @@ export default function CampaignLanding({ campaign }: { campaign: CampaignLandin
         </div>
       </section>
 
+      {(campaign.repoUrl || campaign.productionUrl || campaign.previewUrl || campaign.vercelProjectUrl) && (
+        <section className="px-6 pb-4 max-w-4xl mx-auto">
+          <div className="flex flex-wrap justify-center gap-3">
+            {campaign.repoUrl && <BuildLink href={campaign.repoUrl} label="Repository" />}
+            {campaign.productionUrl && <BuildLink href={campaign.productionUrl} label="Production" />}
+            {campaign.previewUrl && <BuildLink href={campaign.previewUrl} label="Preview" />}
+            {campaign.vercelProjectUrl && <BuildLink href={campaign.vercelProjectUrl} label="Vercel" />}
+          </div>
+        </section>
+      )}
+
       {hasFeaturePanels && (
         <section className="px-6 py-12 max-w-6xl mx-auto grid gap-8 lg:grid-cols-2">
           {campaign.metrics != null && (
@@ -224,7 +243,7 @@ export default function CampaignLanding({ campaign }: { campaign: CampaignLandin
           )}
           {ideUpdates.length > 0 && <IdeIntegration initialUpdates={ideUpdates} />}
           {sandboxes.length > 0 && <DemoSandbox sandboxes={sandboxes} />}
-          {polls.length > 0 && <TokenizedGovernance polls={polls} />}
+          {polls.length > 0 && <TokenizedGovernance campaignId={campaign.id} polls={polls} />}
           {paywalls.length > 0 && (
             <MilestonePaywall totalRaised={totalRaised} paywalls={paywalls} />
           )}
@@ -519,5 +538,18 @@ export default function CampaignLanding({ campaign }: { campaign: CampaignLandin
         </div>
       )}
     </div>
+  );
+}
+
+function BuildLink({ href, label }: { href: string; label: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="rounded-full border border-slate-800 bg-slate-900 px-4 py-2 text-xs font-mono text-slate-300 hover:border-emerald-500/40 hover:text-white"
+    >
+      {label}
+    </a>
   );
 }

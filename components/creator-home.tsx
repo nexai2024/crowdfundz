@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowUpRight, Zap } from "lucide-react";
 import ClaimSubdomainPrompt from "@/components/claim-subdomain-prompt";
 import NewProjectForm from "@/components/new-project-form";
+import { EmailConfirmation, PayoutSetup } from "@/components/studio-account-tools";
 import PitchRefiner from "@/components/pitch-refiner";
 import type { CreatorHomeData } from "@/lib/landing-types";
 
@@ -52,7 +53,7 @@ export default function CreatorHome({
         <div className="grid lg:grid-cols-[1.3fr_0.7fr] gap-10 items-end">
           <div>
             <p className="text-xs font-mono uppercase tracking-wider text-emerald-400 mb-4">
-              Creator home
+              {signedIn ? "Studio" : "Creator home"}
             </p>
             <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white leading-tight">
               {creator.headline}
@@ -82,12 +83,13 @@ export default function CreatorHome({
         ) : (
           <div className="space-y-6">
             {featured && (
-              <ProjectLink
-                href={featured.href}
+              <ProjectCard
+                href={signedIn ? `/account/${featured.slug}` : featured.href}
+                liveHref={signedIn ? featured.href : undefined}
                 className="group block rounded-3xl border border-emerald-500/30 bg-slate-900/70 p-8 sm:p-10 hover:border-emerald-400/60 transition"
               >
                 <div className="flex items-center justify-between gap-4 text-xs font-mono text-emerald-400">
-                  <span>FEATURED · {STATUS_LABEL[featured.status].toUpperCase()}</span>
+                  <span>{signedIn ? "OPEN STUDIO" : "FEATURED"} · {STATUS_LABEL[featured.status].toUpperCase()}</span>
                   <span className="inline-flex items-center gap-1">
                     {creator.subdomain ? `${creator.subdomain}/${featured.slug}` : "Unlisted"}
                     {featured.href && <ArrowUpRight className="w-3.5 h-3.5" />}
@@ -102,16 +104,17 @@ export default function CreatorHome({
                   goal={featured.targetGoal}
                   backers={featured.backerCount}
                 />
-              </ProjectLink>
+              </ProjectCard>
             )}
 
             <div className="grid md:grid-cols-2 gap-4">
               {creator.projects
                 .filter((project) => project.slug !== featured?.slug)
                 .map((project) => (
-                  <ProjectLink
+                  <ProjectCard
                     key={project.slug}
-                    href={project.href}
+                    href={signedIn ? `/account/${project.slug}` : project.href}
+                    liveHref={signedIn ? project.href : undefined}
                     className="group rounded-2xl border border-slate-800 bg-slate-900/50 p-6 hover:border-slate-600 transition"
                   >
                     <div className="flex items-center justify-between text-[11px] font-mono text-slate-500">
@@ -127,43 +130,64 @@ export default function CreatorHome({
                       goal={project.targetGoal}
                       backers={project.backerCount}
                     />
-                  </ProjectLink>
+                  </ProjectCard>
                 ))}
             </div>
           </div>
         )}
 
-        <div className="mt-10 grid lg:grid-cols-2 gap-8">
-          <NewProjectForm
-            subdomain={creator.subdomain ?? ""}
-            pathPrefix={creator.projectPathPrefix}
-            signedIn={signedIn}
-          />
-          <PitchRefiner
-            initialTitle={featured?.title}
-            initialTagline={featured?.tagline}
-            initialGoal={featured?.targetGoal}
-          />
-        </div>
+        {signedIn && (
+          <div className="mt-10 grid gap-8 lg:grid-cols-2">
+            <PayoutSetup connected={Boolean(creator.payoutsConnected)} />
+            <EmailConfirmation email={creator.email} verified={Boolean(creator.emailVerified)} />
+            <NewProjectForm
+              subdomain={creator.subdomain ?? ""}
+              pathPrefix={creator.projectPathPrefix}
+              signedIn
+            />
+            <PitchRefiner
+              initialTitle={featured?.title}
+              initialTagline={featured?.tagline}
+              initialGoal={featured?.targetGoal}
+            />
+          </div>
+        )}
       </section>
     </div>
   );
 }
 
-function ProjectLink({
+function ProjectCard({
   href,
+  liveHref,
   className,
   children,
 }: {
   href: string;
+  liveHref?: string;
   className: string;
   children: ReactNode;
 }) {
-  if (!href) return <div className={className}>{children}</div>;
+  if (!liveHref) {
+    if (!href) return <div className={className}>{children}</div>;
+    return (
+      <Link href={href} className={className}>
+        {children}
+      </Link>
+    );
+  }
+
   return (
-    <Link href={href} className={className}>
-      {children}
-    </Link>
+    <div className={`${className} relative`}>
+      <Link href={href} className="absolute inset-0 rounded-[inherit]" aria-label="Open studio" />
+      <div className="pointer-events-none">{children}</div>
+      <Link
+        href={liveHref}
+        className="relative z-10 mt-4 inline-flex items-center gap-1 text-xs font-mono text-emerald-400 hover:underline"
+      >
+        View live page <ArrowUpRight className="w-3.5 h-3.5" />
+      </Link>
+    </div>
   );
 }
 

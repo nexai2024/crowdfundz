@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { normalizeSubdomain, subdomainError } from "@/lib/subdomain";
@@ -161,6 +162,11 @@ export default function AccountAuthForm({
               ? "Save subdomain"
               : "Create account"}
       </button>
+      {mode === "sign-in" && (
+        <Link href="/account/reset" className="mt-3 block text-center text-sm text-slate-400 hover:text-emerald-300">
+          Forgot password
+        </Link>
+      )}
       <button
         type="button"
         onClick={() => setMode(mode === "sign-up" ? "sign-in" : "sign-up")}

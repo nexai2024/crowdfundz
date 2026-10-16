@@ -1,6 +1,15 @@
 import { NextResponse } from "next/server";
+import { getSessionUser } from "@/lib/current-user";
+import { sameOriginOrForbid } from "@/lib/http";
 
 export async function POST(req: Request) {
+  const origin = sameOriginOrForbid(req);
+  if (origin) return origin;
+  const user = await getSessionUser();
+  if (!user) {
+    return NextResponse.json({ error: "Sign in required" }, { status: 401 });
+  }
+
   try {
     const body = await req.json();
     const { title, tagline, story, targetGoal } = body;

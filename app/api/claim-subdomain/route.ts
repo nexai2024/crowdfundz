@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/current-user";
+import { sameOriginOrForbid } from "@/lib/http";
 import { normalizeSubdomain, subdomainError } from "@/lib/subdomain";
 
 export async function POST(request: NextRequest) {
+  const origin = sameOriginOrForbid(request);
+  if (origin) return origin;
+
   try {
     const sessionUser = await getSessionUser();
     if (!sessionUser) {

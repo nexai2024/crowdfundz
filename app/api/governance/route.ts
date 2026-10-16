@@ -1,13 +1,17 @@
+import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { assertCampaignOwner } from "@/lib/studio";
+import { sameOriginOrForbid } from "@/lib/http";
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const campaignId = searchParams.get("campaignId");
-
+  const campaignId = new URL(req.url).searchParams.get("campaignId");
   if (!campaignId) {
     return NextResponse.json({ error: "campaignId is required" }, { status: 400 });
   }
+
+  const owner = await assertCampaignOwner(campaignId);
+  if (owner) return owner;
 
   try {
     const polls = await prisma.governancePoll.findMany({
@@ -15,7 +19,6 @@ export async function GET(req: Request) {
       include: { votes: true },
       orderBy: { createdAt: "desc" },
     });
-
     return NextResponse.json(polls);
   } catch (error) {
     console.error("Governance GET error:", error);
@@ -24,25 +27,65 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  try {
-    const body = await req.json();
-    const { pollId, backerEmail, optionIndex, weight } = body;
+  const origin = sameOriginOrForbid(req);
+  if (origin) return origin;
 
-    if (!pollId || !backerEmail || optionIndex === undefined) {
-      return NextResponse.json({ error: "pollId, backerEmail, and optionIndex are required" }, { status: 400 });
+  try {
+    const body = (await req.json()) as {
+      pollId?: string;
+      backerEmail?: string;
+      optionIndex?: number;
+    };
+    const email = body.backerEmail?.trim().toLowerCase() || "";
+    const optionIndex = body.optionIndex;
+
+    if (!body.pollId || !email || optionIndex === undefined) {
+      return NextResponse.json(
+        { error: "pollId, backerEmail, and optionIndex are required" },
+        { status: 400 }
+      );
+    }
+
+    const poll = await prisma.governancePoll.findUnique({ where: { id: body.pollId } });
+    if (!poll || poll.status !== "OPEN") {
+      return NextResponse.json({ error: "That poll is not open" }, { status: 404 });
+    }
+    if (poll.expiresAt && poll.expiresAt.getTime() <= Date.now()) {
+      return NextResponse.json({ error: "That poll is closed" }, { status: 400 });
+    }
+    if (!Number.isInteger(optionIndex) || optionIndex < 0 || optionIndex >= poll.options.length) {
+      return NextResponse.json({ error: "Choose one of the listed options" }, { status: 400 });
+    }
+
+    const pledges = await prisma.backer.findMany({
+      where: {
+        campaignId: poll.campaignId,
+        status: "SUCCEEDED",
+        email: { equals: email, mode: "insensitive" },
+      },
+      select: { amountUsd: true },
+    });
+    if (pledges.length === 0) {
+      return NextResponse.json(
+        { error: "Only a confirmed backer on this project can vote" },
+        { status: 403 }
+      );
     }
 
     const vote = await prisma.governanceVote.create({
       data: {
-        pollId,
-        backerEmail,
-        optionIndex: Number(optionIndex),
-        weight: weight || 1,
+        pollId: poll.id,
+        backerEmail: email,
+        optionIndex,
+        weight: pledges.reduce((sum, pledge) => sum + pledge.amountUsd, 0),
       },
     });
 
     return NextResponse.json(vote);
   } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return NextResponse.json({ error: "This email already voted" }, { status: 409 });
+    }
     console.error("Governance POST error:", error);
     return NextResponse.json({ error: "Failed to cast vote" }, { status: 500 });
   }

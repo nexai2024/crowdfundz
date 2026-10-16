@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { ownerMutation } from "@/lib/http";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -30,6 +31,9 @@ export async function POST(req: Request) {
     if (!campaignId || !partnerSubdomain || !partnerSlug || !partnerTitle) {
       return NextResponse.json({ error: "Missing required collaboration details" }, { status: 400 });
     }
+
+    const owner = await ownerMutation(req, campaignId);
+    if (owner) return owner;
 
     const loop = await prisma.collaborationLoop.create({
       data: {

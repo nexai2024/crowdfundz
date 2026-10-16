@@ -82,9 +82,16 @@ model Campaign {
   totalRaised     Int            @default(0)
   backerCount     Int            @default(0)
   status          CampaignStatus @default(ACTIVE)
+  repoUrl         String?
+  repoBranch      String?        @default("main")
+  ideEditor       String?
+  vercelProjectUrl String?
+  productionUrl   String?
+  previewUrl      String?
   creatorId       String
   creator         User           @relation(fields: [creatorId], references: [id])
   tiers           Tier[]
+  tasks           Task[]
   backers         Backer[]
   phases          Phase[]
   faqs            Faq[]
@@ -178,6 +185,7 @@ model GovernanceVote {
   weight      Int            @default(1)
   createdAt   DateTime       @default(now())
 
+  @@unique([pollId, backerEmail])
   @@index([pollId])
 }
 
@@ -212,10 +220,10 @@ model ComplianceCheck {
   id                String   @id @default(cuid())
   campaignId        String   @unique
   campaign          Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  disclaimerVerified Boolean @default(true)
-  kycStatus         String   @default("VERIFIED")
-  jurisdiction      String   @default("US-DELAWARE")
-  taxFormFiled      Boolean  @default(true)
+  disclaimerVerified Boolean @default(false)
+  kycStatus         String   @default("UNVERIFIED")
+  jurisdiction      String   @default("UNSET")
+  taxFormFiled      Boolean  @default(false)
   lastAuditedAt     DateTime @default(now())
 }
 
@@ -269,8 +277,32 @@ model Phase {
   title       String
   description String   @db.Text
   sortOrder   Int      @default(0)
+  tasks       Task[]
 
   @@index([campaignId])
+}
+
+model Task {
+  id         String     @id @default(cuid())
+  campaignId String
+  campaign   Campaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  phaseId    String?
+  phase      Phase?     @relation(fields: [phaseId], references: [id], onDelete: SetNull)
+  title      String
+  details    String     @default("") @db.Text
+  status     TaskStatus @default(TODO)
+  sortOrder  Int        @default(0)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@index([campaignId])
+  @@index([phaseId])
+}
+
+enum TaskStatus {
+  TODO
+  DOING
+  DONE
 }
 
 model Faq {
@@ -318,11 +350,13 @@ model Backer {
   name            String
   handle          String?
   message         String?       @db.VarChar(120)
-  amountUsd       Int
-  status          PaymentStatus @default(PENDING)
-  stripeSessionId String?       @unique
-  backerNumber    Int           @default(autoincrement())
-  createdAt       DateTime      @default(now())
+  amountUsd             Int
+  status                PaymentStatus @default(PENDING)
+  stripeSessionId       String?       @unique
+  stripePaymentIntentId String?       @unique
+  entitledAt            DateTime?
+  backerNumber          Int           @default(autoincrement())
+  createdAt             DateTime      @default(now())
 
   @@index([campaignId])
   @@index([tierId])
@@ -332,4 +366,6 @@ enum PaymentStatus {
   PENDING
   SUCCEEDED
   FAILED
+  REFUNDED
+  DISPUTED
 }

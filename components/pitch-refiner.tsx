@@ -36,6 +36,10 @@ export default function PitchRefiner({
         body: JSON.stringify({ title, tagline, story, targetGoal: goal }),
       });
       const data = await res.json();
+      if (!res.ok) {
+        setResult(null);
+        return;
+      }
       setResult(data);
     } catch (err) {
       console.error(err);
@@ -48,7 +52,10 @@ export default function PitchRefiner({
     <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur">
       <div className="flex items-center gap-2 mb-4">
         <Sparkles className="h-5 w-5 text-emerald-400" />
-        <h3 className="text-lg font-bold text-white">AI-Powered Pitch Refiner</h3>
+        <div>
+          <h3 className="text-lg font-bold text-white">Pitch checklist</h3>
+          <p className="text-xs text-slate-500">Scores length and clarity. It does not call a model.</p>
+        </div>
       </div>
 
       <form onSubmit={handleRefine} className="space-y-3">
@@ -91,7 +98,7 @@ export default function PitchRefiner({
           disabled={isAnalyzing}
           className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs font-mono uppercase tracking-wider transition disabled:opacity-50"
         >
-          {isAnalyzing ? "Analyzing Campaign Copy..." : "Refine Pitch with AI"}
+          {isAnalyzing ? "Checking the pitch..." : "Check the pitch"}
         </button>
       </form>
 

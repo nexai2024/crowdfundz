@@ -116,6 +116,9 @@ export async function getStudioHome(userId: string): Promise<CreatorHomeData | n
 
   return {
     name,
+    email: creator.email,
+    emailVerified: creator.emailVerified,
+    payoutsConnected: Boolean(creator.stripeConnectAccountId),
     subdomain,
     headline: creator.headline || (subdomain ? `Projects by ${name}` : "Your projects are ready for a public name"),
     bio: subdomain
@@ -178,6 +181,7 @@ export async function getCampaignLanding(
   const metric = campaign.metrics[0];
 
   return {
+    id: campaign.id,
     slug: campaign.slug,
     title: campaign.title,
     tagline: campaign.tagline,
@@ -194,6 +198,10 @@ export async function getCampaignLanding(
     subdomain: creator.subdomain ?? subdomain,
     homeHref: onCreatorHost ? "/" : `/${subdomain}`,
     wallHref: onCreatorHost ? `/${slug}/wall` : `/${subdomain}/${slug}/wall`,
+    repoUrl: campaign.repoUrl,
+    productionUrl: campaign.productionUrl,
+    previewUrl: campaign.previewUrl,
+    vercelProjectUrl: campaign.vercelProjectUrl,
     tiers: campaign.tiers.map((tier) => ({
       id: tier.id,
       name: tier.name,
@@ -291,7 +299,7 @@ export async function getCampaignLanding(
       title: pw.title,
       description: pw.description,
       requiredRaisedUsd: pw.requiredRaisedUsd,
-      contentUrl: pw.contentUrl,
+      contentUrl: "",
       locked: campaign.totalRaised < pw.requiredRaisedUsd,
     })),
   };

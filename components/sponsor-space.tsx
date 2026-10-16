@@ -1,66 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
-import { Megaphone, ExternalLink, Plus } from "lucide-react";
+import { Megaphone, ExternalLink } from "lucide-react";
 import type { SponsorSlotView } from "@/lib/landing-types";
 
 export default function SponsorSpace({
-  campaignId,
   sponsors = [],
 }: {
-  campaignId?: string;
   sponsors?: SponsorSlotView[];
 }) {
-  const [sponsorList, setSponsorList] = useState<SponsorSlotView[]>(sponsors);
-
-  const [sponsorName, setSponsorName] = useState("");
-  const [websiteUrl, setWebsiteUrl] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleAddSponsor = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!sponsorName || !websiteUrl) return;
-    setIsSubmitting(true);
-
-    try {
-      if (campaignId) {
-        const res = await fetch("/api/sponsors", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            campaignId,
-            sponsorName,
-            websiteUrl,
-            logoUrl: `${websiteUrl}/favicon.ico`,
-            tierName: "Brand Sponsor",
-            amountPaidUsd: 300,
-          }),
-        });
-        const data = await res.json();
-        setSponsorList([data, ...sponsorList]);
-      } else {
-        setSponsorList([
-          {
-            id: Date.now().toString(),
-            sponsorName,
-            logoUrl: `${websiteUrl}/favicon.ico`,
-            websiteUrl,
-            tierName: "Brand Sponsor",
-            amountPaidUsd: 300,
-          },
-          ...sponsorList,
-        ]);
-      }
-      setSponsorName("");
-      setWebsiteUrl("");
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  if (sponsorList.length === 0) return null;
+  if (sponsors.length === 0) return null;
 
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur">
@@ -75,7 +23,7 @@ export default function SponsorSpace({
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-        {sponsorList.map((s) => (
+        {sponsors.map((s) => (
           <a
             key={s.id}
             href={s.websiteUrl}
@@ -91,32 +39,6 @@ export default function SponsorSpace({
           </a>
         ))}
       </div>
-
-      <form onSubmit={handleAddSponsor} className="flex flex-col sm:flex-row gap-2">
-        <input
-          type="text"
-          required
-          value={sponsorName}
-          onChange={(e) => setSponsorName(e.target.value)}
-          placeholder="Sponsor Brand Name"
-          className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 font-mono"
-        />
-        <input
-          type="url"
-          required
-          value={websiteUrl}
-          onChange={(e) => setWebsiteUrl(e.target.value)}
-          placeholder="https://brand.com"
-          className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 font-mono"
-        />
-        <button
-          type="submit"
-          disabled={isSubmitting || !sponsorName}
-          className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs font-mono rounded-lg transition disabled:opacity-50 shrink-0 flex items-center gap-1"
-        >
-          <Plus className="h-4 w-4" /> Sponsor
-        </button>
-      </form>
     </div>
   );
 }

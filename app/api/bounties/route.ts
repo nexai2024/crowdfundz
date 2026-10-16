@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { ownerMutation } from "@/lib/http";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -12,7 +13,6 @@ export async function GET(req: Request) {
   try {
     const bounties = await prisma.bounty.findMany({
       where: { campaignId },
-      include: { submissions: true },
       orderBy: { createdAt: "desc" },
     });
 
@@ -31,6 +31,9 @@ export async function POST(req: Request) {
     if (!campaignId || !title || !description || !rewardUsd) {
       return NextResponse.json({ error: "Missing required bounty fields" }, { status: 400 });
     }
+
+    const owner = await ownerMutation(req, campaignId);
+    if (owner) return owner;
 
     const bounty = await prisma.bounty.create({
       data: {

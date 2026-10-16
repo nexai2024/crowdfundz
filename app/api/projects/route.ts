@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/current-user";
-import { normalizeSlug, normalizeSubdomain, slugError } from "@/lib/subdomain";
+import { sameOriginOrForbid } from "@/lib/http";
+import { normalizeSlug, slugError } from "@/lib/subdomain";
 
 type ProjectBody = {
   subdomain?: string;
@@ -24,10 +25,11 @@ function wholeDollars(value: number | string | undefined): number | null {
 }
 
 export async function POST(request: NextRequest) {
+  const origin = sameOriginOrForbid(request);
+  if (origin) return origin;
+
   try {
     const body = (await request.json()) as ProjectBody;
-    const subdomain = normalizeSubdomain(body.subdomain || "");
-    const email = body.email?.trim().toLowerCase() || "";
     const slug = normalizeSlug(body.slug || "");
     const title = body.title?.trim() || "";
     const tagline = body.tagline?.trim() || "";
@@ -40,15 +42,15 @@ export async function POST(request: NextRequest) {
     const invalidSlug = slugError(slug);
 
     const sessionUser = await getSessionUser();
+    if (!sessionUser) {
+      return NextResponse.json({ error: "Sign in required" }, { status: 401 });
+    }
 
-    if (!slug || !title || !tagline || !story || (!sessionUser && (!subdomain || !email))) {
+    if (!slug || !title || !tagline || !story) {
       return NextResponse.json(
         { error: "Slug, title, tagline, and story are required" },
         { status: 400 }
       );
-    }
-    if (!sessionUser && !email.includes("@")) {
-      return NextResponse.json({ error: "Enter the email on this subdomain" }, { status: 400 });
     }
     if (invalidSlug) {
       return NextResponse.json({ error: invalidSlug }, { status: 400 });
@@ -69,35 +71,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const creator = sessionUser
-      ? sessionUser
-      : await prisma.user.findUnique({
-          where: { subdomain },
-          select: { id: true, email: true, name: true, subdomain: true },
-        });
-
-    if (!creator || (!sessionUser && creator.email.toLowerCase() !== email)) {
-      return NextResponse.json(
-        { error: "That email does not own this subdomain" },
-        { status: 403 }
-      );
-    }
-    if (sessionUser && email && creator.email.toLowerCase() !== email) {
-      return NextResponse.json(
-        { error: "That email does not match the signed-in account" },
-        { status: 403 }
-      );
-    }
-    if (subdomain && creator.subdomain !== subdomain) {
-      return NextResponse.json(
-        { error: "That email does not own this subdomain" },
-        { status: 403 }
-      );
-    }
-
     const campaign = await prisma.campaign.create({
       data: {
-        creatorId: creator.id,
+        creatorId: sessionUser.id,
         slug,
         title,
         tagline,

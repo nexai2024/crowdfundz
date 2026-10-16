@@ -108,6 +108,7 @@ export type MilestonePaywallView = {
 };
 
 export type CampaignLandingData = {
+  id: string;
   slug: string;
   title: string;
   tagline: string;
@@ -124,6 +125,10 @@ export type CampaignLandingData = {
   subdomain: string;
   homeHref: string;
   wallHref: string;
+  repoUrl: string | null;
+  productionUrl: string | null;
+  previewUrl: string | null;
+  vercelProjectUrl: string | null;
   tiers: CampaignTierView[];
   backers: CampaignBackerView[];
   phases: CampaignPhaseView[];
@@ -152,6 +157,9 @@ export type CreatorProjectCard = {
 
 export type CreatorHomeData = {
   name: string;
+  email?: string;
+  emailVerified?: boolean;
+  payoutsConnected?: boolean;
   subdomain: string | null;
   headline: string;
   bio: string;

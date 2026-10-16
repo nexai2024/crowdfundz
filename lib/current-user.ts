@@ -3,10 +3,15 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function getSessionUserId(): Promise<string | null> {
-  const session = await auth.api.getSession({
-    headers: headers(),
-  });
-  return session?.user?.id ?? null;
+  try {
+    const session = await auth.api.getSession({
+      headers: headers(),
+    });
+    return session?.user?.id ?? null;
+  } catch (error) {
+    console.error("Could not read the session", error);
+    return null;
+  }
 }
 
 export async function getSessionUser() {
