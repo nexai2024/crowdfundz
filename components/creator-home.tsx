@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowUpRight, Zap } from "lucide-react";
 import ClaimSubdomainPrompt from "@/components/claim-subdomain-prompt";
 import NewProjectForm from "@/components/new-project-form";
+import { ReconcileTool } from "@/components/reconcile-tool";
 import { EmailConfirmation, PayoutSetup } from "@/components/studio-account-tools";
 import PitchRefiner from "@/components/pitch-refiner";
 import type { CreatorHomeData } from "@/lib/landing-types";
@@ -17,9 +18,11 @@ const STATUS_LABEL = {
 export default function CreatorHome({
   creator,
   signedIn = false,
+  platformAdmin = false,
 }: {
   creator: CreatorHomeData;
   signedIn?: boolean;
+  platformAdmin?: boolean;
 }) {
   const raised = creator.projects.reduce((sum, project) => sum + project.totalRaised, 0);
   const backers = creator.projects.reduce((sum, project) => sum + project.backerCount, 0);
@@ -136,10 +139,75 @@ export default function CreatorHome({
           </div>
         )}
 
+        {signedIn && creator.pledgesMade && creator.pledgesMade.length > 0 && (
+          <div className="mt-10 rounded-3xl border border-slate-800 bg-slate-900/50 p-6">
+            <h2 className="text-lg font-bold text-white">Pledges you made</h2>
+            <ul className="mt-4 divide-y divide-slate-800">
+              {creator.pledgesMade.map((pledge) => (
+                <li key={pledge.id} className="flex items-center justify-between gap-4 py-3 text-sm">
+                  <div>
+                    <div className="font-semibold text-white">{pledge.projectTitle}</div>
+                    <div className="text-xs text-slate-500">
+                      {pledge.name} · {new Date(pledge.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-mono text-white">${pledge.amountUsd.toLocaleString()}</div>
+                    <div className="text-[11px] font-mono text-slate-500">{pledge.status}</div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {signedIn && creator.recentPledges && creator.recentPledges.length > 0 && (
+          <div className="mt-10 rounded-3xl border border-slate-800 bg-slate-900/50 p-6">
+            <h2 className="text-lg font-bold text-white">Pledges on your projects</h2>
+            <ul className="mt-4 divide-y divide-slate-800">
+              {creator.recentPledges.map((pledge) => (
+                <li key={pledge.id} className="flex items-center justify-between gap-4 py-3 text-sm">
+                  <div>
+                    <div className="font-semibold text-white">{pledge.name}</div>
+                    <div className="text-xs text-slate-500">
+                      {pledge.projectTitle} · {new Date(pledge.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-mono text-white">${pledge.amountUsd.toLocaleString()}</div>
+                    <div className="text-[11px] font-mono text-slate-500">{pledge.status}</div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {signedIn && (
           <div className="mt-10 grid gap-8 lg:grid-cols-2">
             <PayoutSetup connected={Boolean(creator.payoutsConnected)} />
             <EmailConfirmation email={creator.email} verified={Boolean(creator.emailVerified)} />
+            {creator.subdomain && (
+              <ReconcileTool
+                scope="studio"
+                title={`Reconcile ${creator.subdomain}`}
+                detail="Check this subdomain's pledges against Stripe. Paid sessions that the webhook missed are recorded, and the project totals are set to the confirmed pledges."
+              />
+            )}
+            {platformAdmin && (
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+                <h3 className="text-lg font-bold text-white">Platform reconcile</h3>
+                <p className="mt-2 text-sm text-slate-400">
+                  Compare every studio with Stripe, not only this subdomain.
+                </p>
+                <Link
+                  href="/account/reconcile"
+                  className="mt-4 inline-flex rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-white hover:border-emerald-500"
+                >
+                  Open platform reconcile
+                </Link>
+              </div>
+            )}
             <NewProjectForm
               subdomain={creator.subdomain ?? ""}
               pathPrefix={creator.projectPathPrefix}

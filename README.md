@@ -47,4 +47,4 @@ EMAIL_FROM=              # verified sender, used with Resend
 
 ## Payments
 
-Creators connect a Stripe Express account from the studio. Checkout creates a destination charge on that account and asks Stripe to email a receipt. The webhook marks the pledge paid, stores the entitlement, and reverses the campaign total on a full refund or dispute.
+Creators connect a Stripe Express account from the studio. Checkout asks Stripe to email a receipt. Crowdventure keeps 5% of every pledge. Card processing and every other Stripe fee on the charge come out of the creator's payout on top of that 5%. Instant pledges transfer when the payment succeeds. Milestone pledges transfer after the pull request is merged and the backer signs off. The webhook marks the pledge paid, and the success page confirms the Checkout Session with Stripe if the webhook has not arrived yet. Studio reconcile covers one subdomain. Platform reconcile at `/account/reconcile` covers every studio for emails in `PLATFORM_ADMIN_EMAILS`. A full refund or dispute reverses the campaign total.

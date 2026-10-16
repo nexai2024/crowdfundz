@@ -3,15 +3,46 @@
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 
+const PAYOUT_COUNTRIES = [
+  ["us", "United States"],
+  ["ca", "Canada"],
+  ["gb", "United Kingdom"],
+  ["au", "Australia"],
+  ["nz", "New Zealand"],
+  ["ie", "Ireland"],
+  ["de", "Germany"],
+  ["fr", "France"],
+  ["nl", "Netherlands"],
+  ["es", "Spain"],
+  ["it", "Italy"],
+  ["se", "Sweden"],
+  ["no", "Norway"],
+  ["dk", "Denmark"],
+  ["fi", "Finland"],
+  ["at", "Austria"],
+  ["be", "Belgium"],
+  ["ch", "Switzerland"],
+  ["pt", "Portugal"],
+  ["sg", "Singapore"],
+  ["jp", "Japan"],
+  ["mx", "Mexico"],
+  ["br", "Brazil"],
+] as const;
+
 export function PayoutSetup({ connected }: { connected: boolean }) {
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
+  const [country, setCountry] = useState("us");
 
   async function start() {
     setPending(true);
     setError("");
     try {
-      const response = await fetch("/api/stripe/connect", { method: "POST" });
+      const response = await fetch("/api/stripe/connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ country }),
+      });
       const data = (await response.json()) as { url?: string; error?: string };
       if (!response.ok || !data.url) {
         setError(data.error || "Could not start payout setup");
@@ -30,9 +61,25 @@ export function PayoutSetup({ connected }: { connected: boolean }) {
       <h3 className="text-lg font-bold text-white">Payouts</h3>
       <p className="mt-2 text-sm text-slate-400">
         {connected
-          ? "A Stripe account is linked. Finish setup there if charges are not enabled yet. Pledges transfer to that account."
-          : "Connect Stripe so a pledge lands in your account instead of sitting on the platform."}
+          ? "A Stripe account is linked. Crowdventure keeps 5% of every pledge. Card processing and every other Stripe fee come out of your payout on top of that 5%. Instant pledges transfer when they are paid. Milestone pledges transfer after the pull request is merged and the backer signs off."
+          : "Connect Stripe before pledges can be paid out. Crowdventure keeps 5% of every pledge. Card processing and every other Stripe fee come out of your payout on top of that 5%."}
       </p>
+      {!connected && (
+        <label className="mt-4 block text-sm text-slate-300">
+          Country
+          <select
+            value={country}
+            onChange={(event) => setCountry(event.target.value)}
+            className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white"
+          >
+            {PAYOUT_COUNTRIES.map(([code, label]) => (
+              <option key={code} value={code}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       {error && <p className="mt-3 text-sm text-rose-300">{error}</p>}
       <button
         type="button"

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/current-user";
+import { allocationTotals } from "@/lib/escrow";
 import type { CampaignStatus, TaskStatus } from "@prisma/client";
 
 export type StudioTask = {
@@ -42,6 +43,10 @@ export type StudioProject = {
     label: string;
     title: string;
     description: string;
+    pullRequestUrl: string | null;
+    pullRequestMerged: boolean;
+    heldUsd: number;
+    releasedUsd: number;
   }>;
   tasks: StudioTask[];
   faqs: Array<{ id: string; question: string; answer: string }>;
@@ -76,7 +81,10 @@ export async function getStudioProject(
     include: {
       creator: { select: { subdomain: true } },
       tiers: { orderBy: { sortOrder: "asc" } },
-      phases: { orderBy: { sortOrder: "asc" } },
+      phases: {
+        orderBy: { sortOrder: "asc" },
+        include: { allocations: { select: { amountUsd: true, status: true } } },
+      },
       tasks: { orderBy: { sortOrder: "asc" } },
       faqs: { orderBy: { sortOrder: "asc" } },
       sandboxes: { orderBy: { createdAt: "desc" } },
@@ -124,6 +132,9 @@ export async function getStudioProject(
       label: phase.label,
       title: phase.title,
       description: phase.description,
+      pullRequestUrl: phase.pullRequestUrl,
+      pullRequestMerged: Boolean(phase.pullRequestMergedAt),
+      ...allocationTotals(phase.allocations),
     })),
     tasks: campaign.tasks.map((task) => ({
       id: task.id,

@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
+import { recipientTransfersActive } from "@/lib/stripe-connect";
 import { isAllowedAppOrigin } from "@/lib/hosts";
 import { sameOriginOrForbid } from "@/lib/http";
+import { pledgeAllocations } from "@/lib/escrow";
 
 type CheckoutBody = {
   tierId?: string;
@@ -13,6 +15,8 @@ type CheckoutBody = {
   subdomain?: string;
   slug?: string;
   origin?: string;
+  fundingMode?: string;
+  allocations?: unknown;
 };
 
 export async function POST(req: Request) {
@@ -48,6 +52,24 @@ export async function POST(req: Request) {
       );
     }
 
+    const fundingMode = body.fundingMode === "milestone" ? "MILESTONE" : "INSTANT";
+    let allocationRows: Array<{ phaseId: string; amountUsd: number }> = [];
+    if (fundingMode === "MILESTONE") {
+      const phases = await prisma.phase.findMany({
+        where: { campaignId: tier.campaignId },
+        select: { id: true },
+      });
+      const parsed = pledgeAllocations(
+        tier.priceUsd,
+        new Set(phases.map((phase) => phase.id)),
+        body.allocations
+      );
+      if (!parsed.ok) {
+        return NextResponse.json({ error: parsed.error }, { status: 400 });
+      }
+      allocationRows = parsed.rows;
+    }
+
     if (!stripe) {
       return NextResponse.json(
         { error: "Payments are not configured yet. Add STRIPE_SECRET_KEY to turn checkout on." },
@@ -62,8 +84,8 @@ export async function POST(req: Request) {
         { status: 503 }
       );
     }
-    const account = await stripe.accounts.retrieve(destination);
-    if (!account.charges_enabled) {
+    const transfersActive = await recipientTransfersActive(destination);
+    if (!transfersActive) {
       return NextResponse.json(
         { error: "This creator has not finished payout setup." },
         { status: 503 }
@@ -80,6 +102,11 @@ export async function POST(req: Request) {
         message: body.message ? body.message.slice(0, 120) : null,
         amountUsd: tier.priceUsd,
         status: "PENDING",
+        fundingMode,
+        allocations:
+          fundingMode === "MILESTONE"
+            ? { create: allocationRows.map((row) => ({ ...row, status: "PENDING" as const })) }
+            : undefined,
       },
     });
 
@@ -91,34 +118,40 @@ export async function POST(req: Request) {
     const onSubdomain = originHost === `${subdomain}.localhost` || originHost.startsWith(`${subdomain}.`);
     const path = onSubdomain ? `/${slug}` : `/${subdomain}/${slug}`;
 
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      customer_email: email,
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: `${tier.campaign.title}: ${tier.name}`,
-              description: tier.description,
+    let session;
+    try {
+      session = await stripe.checkout.sessions.create({
+        mode: "payment",
+        customer_email: email,
+        line_items: [
+          {
+            price_data: {
+              currency: "usd",
+              product_data: {
+                name: `${tier.campaign.title}: ${tier.name}`,
+                description:
+                  fundingMode === "MILESTONE"
+                    ? `${tier.description} Held for milestone release.`
+                    : tier.description,
+              },
+              unit_amount: tier.priceUsd * 100,
             },
-            unit_amount: tier.priceUsd * 100,
+            quantity: 1,
           },
-          quantity: 1,
+        ],
+        success_url: `${origin}${path}/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${origin}${path}#tiers`,
+        payment_intent_data: { receipt_email: email },
+        metadata: {
+          backerId: backer.id,
+          campaignId: tier.campaignId,
+          fundingMode,
         },
-      ],
-      success_url: `${origin}${path}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}${path}#tiers`,
-      payment_intent_data: {
-        receipt_email: email,
-        on_behalf_of: destination,
-        transfer_data: { destination },
-      },
-      metadata: {
-        backerId: backer.id,
-        campaignId: tier.campaignId,
-      },
-    });
+      });
+    } catch (error) {
+      await prisma.backer.delete({ where: { id: backer.id } });
+      throw error;
+    }
 
     await prisma.backer.update({
       where: { id: backer.id },

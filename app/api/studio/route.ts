@@ -8,6 +8,7 @@ import {
   requiredText,
   wholeDollars,
 } from "@/lib/studio";
+import { githubPullRequestMerged, releaseSignedAllocations } from "@/lib/escrow";
 
 const STATUSES = new Set(["DRAFT", "ACTIVE", "PAUSED", "COMPLETED"]);
 const TASK_STATUSES = new Set(["TODO", "DOING", "DONE"]);
@@ -42,6 +43,8 @@ export async function POST(request: Request) {
         return await addMilestone(campaign.id, body);
       case "deleteMilestone":
         return await deleteOwned(campaign.id, body, "phase");
+      case "checkMilestonePullRequest":
+        return await checkMilestonePullRequest(campaign.id, body);
       case "addTask":
         return await addTask(campaign.id, body);
       case "updateTask":
@@ -309,6 +312,36 @@ async function addSponsor(campaignId: string, body: Record<string, unknown>) {
   return NextResponse.json({ ok: true }, { status: 201 });
 }
 
+async function checkMilestonePullRequest(campaignId: string, body: Record<string, unknown>) {
+  if (typeof body.id !== "string") {
+    return NextResponse.json({ error: "Missing milestone" }, { status: 400 });
+  }
+  const pullRequestUrl = optionalHttpUrl(body.pullRequestUrl);
+  if (!pullRequestUrl || pullRequestUrl === "invalid") {
+    return NextResponse.json({ error: "Paste a pull request URL" }, { status: 400 });
+  }
+  const phase = await prisma.phase.findFirst({
+    where: { id: body.id, campaignId },
+    select: { id: true, pullRequestMergedAt: true },
+  });
+  if (!phase) return NextResponse.json({ error: "That milestone is not on this project" }, { status: 404 });
+
+  const checked = await githubPullRequestMerged(pullRequestUrl);
+  if ("error" in checked) {
+    return NextResponse.json({ error: checked.error }, { status: 400 });
+  }
+
+  await prisma.phase.update({
+    where: { id: phase.id },
+    data: {
+      pullRequestUrl,
+      pullRequestMergedAt: checked.merged ? phase.pullRequestMergedAt ?? new Date() : null,
+    },
+  });
+  if (checked.merged) await releaseSignedAllocations(phase.id);
+  return NextResponse.json({ ok: true, merged: checked.merged });
+}
+
 async function deleteOwned(
   campaignId: string,
   body: Record<string, unknown>,
@@ -318,6 +351,15 @@ async function deleteOwned(
     return NextResponse.json({ error: "Missing record" }, { status: 400 });
   }
   const where = { id: body.id, campaignId };
+  if (kind === "phase") {
+    const attached = await prisma.pledgeAllocation.count({ where: { phaseId: body.id } });
+    if (attached > 0) {
+      return NextResponse.json(
+        { error: "This milestone has pledges attached, so it stays on the plan" },
+        { status: 409 }
+      );
+    }
+  }
   const deleted =
     kind === "phase"
       ? await prisma.phase.deleteMany({ where })

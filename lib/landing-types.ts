@@ -22,6 +22,9 @@ export type CampaignPhaseView = {
   label: string;
   title: string;
   description: string;
+  heldUsd: number;
+  releasedUsd: number;
+  pullRequestMerged: boolean;
 };
 
 export type CampaignFaqView = {
@@ -155,6 +158,16 @@ export type CreatorProjectCard = {
   href: string;
 };
 
+export type StudioPledge = {
+  id: string;
+  name: string;
+  amountUsd: number;
+  status: "PENDING" | "SUCCEEDED" | "FAILED" | "REFUNDED" | "DISPUTED";
+  projectTitle: string;
+  projectSlug: string;
+  createdAt: string;
+};
+
 export type CreatorHomeData = {
   name: string;
   email?: string;
@@ -164,6 +177,8 @@ export type CreatorHomeData = {
   headline: string;
   bio: string;
   projects: CreatorProjectCard[];
+  recentPledges?: StudioPledge[];
+  pledgesMade?: StudioPledge[];
   platformHref: string;
   projectPathPrefix: string;
 };

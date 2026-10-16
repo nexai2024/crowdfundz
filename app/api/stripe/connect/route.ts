@@ -19,10 +19,23 @@ export async function POST(request: Request) {
     );
   }
 
+  let country = "us";
+  try {
+    const body = (await request.json()) as { country?: string };
+    if (typeof body.country === "string" && body.country.trim()) {
+      country = body.country.trim().toLowerCase();
+    }
+  } catch {
+    country = "us";
+  }
+  if (!/^[a-z]{2}$/.test(country)) {
+    return NextResponse.json({ error: "Choose a two-letter country code." }, { status: 400 });
+  }
+
   try {
     const creator = await prisma.user.findUnique({
       where: { id: user.id },
-      select: { id: true, email: true, stripeConnectAccountId: true },
+      select: { id: true, email: true, name: true, stripeConnectAccountId: true },
     });
     if (!creator) {
       return NextResponse.json({ error: "Sign in required" }, { status: 401 });
@@ -30,12 +43,25 @@ export async function POST(request: Request) {
 
     let accountId = creator.stripeConnectAccountId;
     if (!accountId) {
-      const account = await stripe.accounts.create({
-        type: "express",
-        email: creator.email,
-        capabilities: {
-          card_payments: { requested: true },
-          transfers: { requested: true },
+      const account = await stripe.v2.core.accounts.create({
+        display_name: creator.name || creator.email,
+        contact_email: creator.email,
+        dashboard: "express",
+        identity: { country },
+        configuration: {
+          recipient: {
+            capabilities: {
+              stripe_balance: {
+                stripe_transfers: { requested: true },
+              },
+            },
+          },
+        },
+        defaults: {
+          responsibilities: {
+            fees_collector: "application",
+            losses_collector: "application",
+          },
         },
         metadata: { userId: creator.id },
       });
@@ -47,16 +73,21 @@ export async function POST(request: Request) {
     }
 
     const origin = request.headers.get("origin") || process.env.BETTER_AUTH_URL || "http://localhost:3000";
-    const link = await stripe.accountLinks.create({
+    const link = await stripe.v2.core.accountLinks.create({
       account: accountId,
-      refresh_url: `${origin}/account`,
-      return_url: `${origin}/account`,
-      type: "account_onboarding",
+      use_case: {
+        type: "account_onboarding",
+        account_onboarding: {
+          refresh_url: `${origin}/account`,
+          return_url: `${origin}/account`,
+        },
+      },
     });
 
     return NextResponse.json({ url: link.url });
   } catch (error) {
-    console.error("Stripe Connect onboarding failed:", error);
-    return NextResponse.json({ error: "Could not start payout setup" }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Could not start payout setup";
+    console.error("Stripe Connect onboarding failed:", message);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -22,13 +22,8 @@ import SponsorSpace from "@/components/sponsor-space";
 import CollaborationLoops from "@/components/collaboration-loops";
 import MilestonePaywall from "@/components/milestone-paywall";
 
-type BackerState = CampaignLandingData["backers"][number];
-
 export default function CampaignLanding({ campaign }: { campaign: CampaignLandingData }) {
   const [selectedTier, setSelectedTier] = useState<CampaignTierView | null>(null);
-  const [backers, setBackers] = useState<BackerState[]>(campaign.backers);
-  const [totalRaised, setTotalRaised] = useState(campaign.totalRaised);
-  const [backerCount, setBackerCount] = useState(campaign.backerCount);
   const [activePhaseIndex, setActivePhaseIndex] = useState(0);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   const [backerName, setBackerName] = useState("");
@@ -37,7 +32,13 @@ export default function CampaignLanding({ campaign }: { campaign: CampaignLandin
   const [backerMessage, setBackerMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
+  const [fundingMode, setFundingMode] = useState<"instant" | "milestone">("instant");
+  const [selectedPhaseIds, setSelectedPhaseIds] = useState<string[]>([]);
+  const [allocationAmounts, setAllocationAmounts] = useState<Record<string, number>>({});
 
+  const totalRaised = campaign.totalRaised;
+  const backerCount = campaign.backerCount;
+  const backers = campaign.backers;
   const progressPercent = Math.min(
     100,
     Math.round((totalRaised / Math.max(campaign.targetGoal, 1)) * 100)
@@ -90,6 +91,14 @@ export default function CampaignLanding({ campaign }: { campaign: CampaignLandin
           email: backerEmail,
           message: backerMessage,
           origin: window.location.origin,
+          fundingMode,
+          allocations:
+            fundingMode === "milestone"
+              ? selectedPhaseIds.map((phaseId) => ({
+                  phaseId,
+                  amountUsd: allocationAmounts[phaseId] ?? 0,
+                }))
+              : undefined,
         }),
       });
 
@@ -101,18 +110,7 @@ export default function CampaignLanding({ campaign }: { campaign: CampaignLandin
 
       setCheckoutError(data.error || "Checkout is unavailable right now.");
     } catch {
-      const pledge: BackerState = {
-        id: Date.now().toString(),
-        name: backerName || "Anonymous Backer",
-        handle: backerHandle.replace("@", "") || null,
-        amountUsd: selectedTier.priceUsd,
-        backerNumber: backerCount + 1,
-        message: backerMessage || "Backed the mission.",
-      };
-      setBackers([pledge, ...backers]);
-      setTotalRaised((current) => current + selectedTier.priceUsd);
-      setBackerCount((current) => current + 1);
-      setSelectedTier(null);
+      setCheckoutError("Checkout is unavailable right now.");
     } finally {
       setIsSubmitting(false);
     }
@@ -305,6 +303,20 @@ export default function CampaignLanding({ campaign }: { campaign: CampaignLandin
             <span className="text-xs font-mono text-emerald-400">{activePhase.label}</span>
             <h3 className="text-xl font-bold text-white mt-1 mb-3">{activePhase.title}</h3>
             <p className="text-sm text-slate-400 leading-relaxed">{activePhase.description}</p>
+            {(activePhase.heldUsd > 0 || activePhase.releasedUsd > 0) && (
+              <p className="mt-4 font-mono text-xs text-slate-400">
+                ${activePhase.heldUsd.toLocaleString()} held
+                <span className="mx-2 text-slate-600">·</span>
+                ${activePhase.releasedUsd.toLocaleString()} released
+              </p>
+            )}
+            {activePhase.heldUsd > 0 && (
+              <p className="mt-2 text-xs text-slate-500">
+                {activePhase.pullRequestMerged
+                  ? "The pull request is merged. Backers who held funds here can sign off to release them."
+                  : "Held funds release after a merged pull request and the backer's sign-off."}
+              </p>
+            )}
           </div>
         </section>
       )}
@@ -459,7 +471,7 @@ export default function CampaignLanding({ campaign }: { campaign: CampaignLandin
 
       {selectedTier && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl relative">
+          <div className="max-w-lg w-full max-h-[90vh] overflow-y-auto bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl relative">
             <button
               onClick={() => setSelectedTier(null)}
               className="absolute top-4 right-4 text-slate-400 hover:text-white"
@@ -524,6 +536,92 @@ export default function CampaignLanding({ campaign }: { campaign: CampaignLandin
                 />
               </div>
 
+              <fieldset className="space-y-2">
+                <legend className="block text-[11px] font-mono text-slate-400 mb-1">When the creator is paid</legend>
+                <p className="text-[11px] text-slate-500">
+                  Crowdventure keeps 5% of this pledge. Card processing and every other Stripe fee come out of the creator&apos;s payout on top of that 5%.
+                </p>
+                <label className="flex items-start gap-2 rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-200">
+                  <input
+                    type="radio"
+                    name="fundingMode"
+                    className="mt-0.5"
+                    checked={fundingMode === "instant"}
+                    onChange={() => setFundingMode("instant")}
+                  />
+                  <span>Send ${selectedTier.priceUsd} to the creator when the payment succeeds.</span>
+                </label>
+                <label className="flex items-start gap-2 rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-200">
+                  <input
+                    type="radio"
+                    name="fundingMode"
+                    className="mt-0.5"
+                    checked={fundingMode === "milestone"}
+                    disabled={campaign.phases.length === 0}
+                    onChange={() => {
+                      setFundingMode("milestone");
+                      if (selectedPhaseIds.length === 0 && campaign.phases[0]) {
+                        const first = campaign.phases[0].id;
+                        setSelectedPhaseIds([first]);
+                        setAllocationAmounts({ [first]: selectedTier.priceUsd });
+                      }
+                    }}
+                  />
+                  <span>
+                    Hold it for milestones. Each amount is released after that milestone&apos;s pull request is merged and you sign off.
+                  </span>
+                </label>
+                {campaign.phases.length === 0 && (
+                  <p className="text-[11px] text-slate-500">This project has no milestones yet, so the pledge is sent immediately.</p>
+                )}
+              </fieldset>
+
+              {fundingMode === "milestone" && campaign.phases.length > 0 && (
+                <div className="space-y-2">
+                  {campaign.phases.map((phase) => {
+                    const selected = selectedPhaseIds.includes(phase.id);
+                    return (
+                      <div key={phase.id} className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-950 px-3 py-2">
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={() => {
+                            const next = selected
+                              ? selectedPhaseIds.filter((id) => id !== phase.id)
+                              : [...selectedPhaseIds, phase.id];
+                            setSelectedPhaseIds(next);
+                            setAllocationAmounts(splitEvenly(selectedTier.priceUsd, next));
+                          }}
+                          aria-label={phase.title}
+                        />
+                        <span className="min-w-0 flex-1 text-xs text-slate-200">
+                          <span className="font-mono text-[10px] text-emerald-400">{phase.label}</span>
+                          <span className="mt-0.5 block truncate">{phase.title}</span>
+                        </span>
+                        <input
+                          type="number"
+                          min={1}
+                          step={1}
+                          disabled={!selected}
+                          value={selected ? allocationAmounts[phase.id] ?? "" : ""}
+                          onChange={(event) => {
+                            const amount = Number(event.target.value);
+                            setAllocationAmounts((current) => ({
+                              ...current,
+                              [phase.id]: Number.isInteger(amount) ? amount : 0,
+                            }));
+                          }}
+                          className="w-20 bg-slate-900 border border-slate-800 rounded-lg px-2 py-1 text-xs text-white disabled:opacity-40"
+                        />
+                      </div>
+                    );
+                  })}
+                  <p className="text-[11px] font-mono text-slate-500">
+                    Selected ${selectedPhaseIds.reduce((sum, id) => sum + (allocationAmounts[id] ?? 0), 0)} of ${selectedTier.priceUsd}
+                  </p>
+                </div>
+              )}
+
               {checkoutError && <p className="text-xs text-rose-300">{checkoutError}</p>}
 
               <button
@@ -539,6 +637,19 @@ export default function CampaignLanding({ campaign }: { campaign: CampaignLandin
       )}
     </div>
   );
+}
+
+function splitEvenly(total: number, ids: string[]) {
+  const next: Record<string, number> = {};
+  if (ids.length === 0) return next;
+  const base = Math.floor(total / ids.length);
+  let remainder = total - base * ids.length;
+  for (const id of ids) {
+    const extra = remainder > 0 ? 1 : 0;
+    remainder -= extra;
+    next[id] = base + extra;
+  }
+  return next;
 }
 
 function BuildLink({ href, label }: { href: string; label: string }) {

@@ -5,6 +5,8 @@ import { ArrowRight, CheckCircle2, Share2, ShieldCheck } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { isOnCreatorHost } from "@/lib/hosts";
 import { isReservedSubdomain } from "@/lib/subdomain";
+import PledgeHold from "@/components/pledge-hold";
+import { confirmCheckoutSession } from "@/lib/pledges";
 
 export const dynamic = "force-dynamic";
 
@@ -26,10 +28,21 @@ export default async function SuccessPage({ params, searchParams }: PageProps) {
   });
   if (!campaign) notFound();
 
+  if (searchParams.session_id) {
+    try {
+      await confirmCheckoutSession(searchParams.session_id);
+    } catch (error) {
+      console.error("Could not confirm checkout session", error instanceof Error ? error.message : error);
+    }
+  }
+
   const backer = searchParams.session_id
     ? await prisma.backer.findUnique({
         where: { stripeSessionId: searchParams.session_id },
-        include: { tier: true },
+        include: {
+          tier: true,
+          allocations: { include: { phase: true }, orderBy: { createdAt: "asc" } },
+        },
       })
     : null;
   const ownsPledge = backer?.campaignId === campaign.id ? backer : null;
@@ -78,12 +91,14 @@ export default async function SuccessPage({ params, searchParams }: PageProps) {
         </span>
 
         <h1 className="text-3xl font-bold tracking-tight text-white mt-4">
-          You are on the wall, {backerName}.
+          {entitled ? `You are on the wall, ${backerName}.` : `Pledge received, ${backerName}.`}
         </h1>
         <p className="text-slate-400 text-sm mt-3 leading-relaxed">
-          {backerNumber
+          {entitled && backerNumber
             ? `You are backer #${backerNumber} on ${params.subdomain}/${params.slug}.`
-            : `Your pledge for ${campaign.title} is recorded.`}
+            : entitled
+              ? `Your pledge for ${campaign.title} is recorded.`
+              : "Stripe accepted the payment. This page records it on the project. If the status stays on processing, the creator can reconcile the studio."}
         </p>
 
         <div className="my-8 p-6 bg-slate-950/80 border border-slate-800 rounded-2xl text-left relative">
@@ -106,6 +121,20 @@ export default async function SuccessPage({ params, searchParams }: PageProps) {
               ))}
             </ul>
           ) : null}
+          {ownsPledge?.fundingMode === "MILESTONE" && searchParams.session_id && (
+            <PledgeHold
+              sessionId={searchParams.session_id}
+              holds={ownsPledge.allocations.map((allocation) => ({
+                phaseId: allocation.phaseId,
+                label: allocation.phase.label,
+                title: allocation.phase.title,
+                amountUsd: allocation.amountUsd,
+                status: allocation.status,
+                signedOff: Boolean(allocation.signedOffAt),
+                pullRequestMerged: Boolean(allocation.phase.pullRequestMergedAt),
+              }))}
+            />
+          )}
           {paywalls.length > 0 && (
             <ul className="mt-4 space-y-2 text-xs">
               {paywalls.map((paywall) => (

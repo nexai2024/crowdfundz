@@ -2,6 +2,8 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
+import { releaseSignedAllocations, settlePledgePayout } from "@/lib/escrow";
+import { applyPaidCheckoutSession } from "@/lib/pledges";
 import type Stripe from "stripe";
 
 export async function POST(req: Request) {
@@ -25,7 +27,11 @@ export async function POST(req: Request) {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-    await markPledgePaid(session);
+    const result = await applyPaidCheckoutSession(session);
+    if ("backerId" in result && result.backerId) await settlePledgePayout(result.backerId);
+  } else if (event.type === "charge.updated") {
+    const charge = event.data.object as Stripe.Charge;
+    await settleCharge(charge);
   } else if (event.type === "charge.refunded") {
     const charge = event.data.object as Stripe.Charge;
     if (charge.refunded) await revokePledge(paymentIntentId(charge.payment_intent), "REFUNDED");
@@ -46,31 +52,14 @@ function paymentIntentId(value: string | Stripe.PaymentIntent | null | undefined
   return typeof value === "string" ? value : value.id;
 }
 
-async function markPledgePaid(session: Stripe.Checkout.Session) {
-  const backerId = session.metadata?.backerId;
-  if (!backerId) return;
-
-  const existing = await prisma.backer.findUnique({ where: { id: backerId } });
-  if (!existing || existing.status === "SUCCEEDED") return;
-
-  const amountPaid = session.amount_total ? Math.round(session.amount_total / 100) : existing.amountUsd;
-  await prisma.backer.update({
-    where: { id: existing.id },
-    data: {
-      status: "SUCCEEDED",
-      email: (session.customer_details?.email || existing.email).toLowerCase(),
-      entitledAt: new Date(),
-      stripePaymentIntentId: paymentIntentId(session.payment_intent),
-      amountUsd: amountPaid,
-    },
+async function settleCharge(charge: Stripe.Charge) {
+  const intentId = paymentIntentId(charge.payment_intent);
+  if (!intentId) return;
+  const backer = await prisma.backer.findUnique({
+    where: { stripePaymentIntentId: intentId },
+    select: { id: true },
   });
-  await prisma.campaign.update({
-    where: { id: existing.campaignId },
-    data: {
-      totalRaised: { increment: amountPaid },
-      backerCount: { increment: 1 },
-    },
-  });
+  if (backer) await settlePledgePayout(backer.id);
 }
 
 async function revokePledge(intentId: string | null, status: "REFUNDED" | "DISPUTED") {
@@ -82,6 +71,10 @@ async function revokePledge(intentId: string | null, status: "REFUNDED" | "DISPU
   await prisma.backer.update({
     where: { id: backer.id },
     data: { status, entitledAt: null },
+  });
+  await prisma.pledgeAllocation.updateMany({
+    where: { backerId: backer.id, status: { in: ["PENDING", "HELD", "RELEASING"] } },
+    data: { status: status === "DISPUTED" ? "DISPUTED" : "REFUNDED" },
   });
   if (wasCounted) {
     await prisma.campaign.update({
@@ -103,6 +96,17 @@ async function restorePledge(intentId: string | null) {
     where: { id: backer.id },
     data: { status: "SUCCEEDED", entitledAt: new Date() },
   });
+  await prisma.pledgeAllocation.updateMany({
+    where: { backerId: backer.id, status: "DISPUTED" },
+    data: { status: "HELD" },
+  });
+  const signed = await prisma.pledgeAllocation.findMany({
+    where: { backerId: backer.id, status: "HELD", signedOffAt: { not: null } },
+    select: { phaseId: true },
+  });
+  for (const phaseId of Array.from(new Set(signed.map((row) => row.phaseId)))) {
+    await releaseSignedAllocations(phaseId);
+  }
   await prisma.campaign.update({
     where: { id: backer.campaignId },
     data: {

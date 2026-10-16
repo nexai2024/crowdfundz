@@ -235,7 +235,7 @@ function PlanSection({ project }: { project: StudioProject }) {
   const taskSave = useStudioSave();
   const unassigned = project.tasks.filter((task) => !task.phaseId);
   return (
-    <Section id="plan" title="Milestones and tasks" hint="Milestones publish as the public plan. Tasks stay in the studio.">
+    <Section id="plan" title="Milestones and tasks" hint="Milestones publish as the public plan. A backer can hold a pledge against them. Funds move after you record a merged pull request and that backer signs off. Tasks stay in the studio.">
       {project.milestones.length === 0 && unassigned.length === 0 && (
         <p className="text-sm text-slate-400">Define the first milestone, then attach the work that gets it done.</p>
       )}
@@ -255,6 +255,7 @@ function PlanSection({ project }: { project: StudioProject }) {
               onChange={(id, status) => void listSave.run({ action: "updateTask", slug: project.slug, id, status })}
               onRemove={(id) => void listSave.run({ action: "deleteTask", slug: project.slug, id })}
             />
+            <MilestoneRelease projectSlug={project.slug} milestone={milestone} />
           </div>
         ))}
         {unassigned.length > 0 && (
@@ -453,6 +454,51 @@ function PublishSection({ project }: { project: StudioProject }) {
   );
 }
 
+function MilestoneRelease({
+  projectSlug,
+  milestone,
+}: {
+  projectSlug: string;
+  milestone: StudioProject["milestones"][number];
+}) {
+  const save = useStudioSave();
+  return (
+    <form
+      className="mt-4 grid gap-2 border-t border-slate-800 pt-4"
+      onSubmit={(event) => {
+        event.preventDefault();
+        const form = new FormData(event.currentTarget);
+        void save.run({
+          action: "checkMilestonePullRequest",
+          slug: projectSlug,
+          id: milestone.id,
+          pullRequestUrl: form.get("pullRequestUrl"),
+        });
+      }}
+    >
+      <p className="font-mono text-[11px] text-slate-400">
+        ${milestone.heldUsd.toLocaleString()} held · ${milestone.releasedUsd.toLocaleString()} released
+      </p>
+      <input
+        name="pullRequestUrl"
+        type="url"
+        defaultValue={milestone.pullRequestUrl ?? ""}
+        placeholder="https://github.com/org/repo/pull/12"
+        className={inputClass}
+      />
+      <div className="flex flex-wrap items-center gap-3">
+        <SaveButton pending={save.pending} error={save.error} label="Check pull request" pendingLabel="Checking..." />
+        {milestone.pullRequestMerged && (
+          <span className="text-xs text-emerald-400">Merged. Signed-off amounts can transfer.</span>
+        )}
+        {milestone.pullRequestUrl && !milestone.pullRequestMerged && !save.error && (
+          <span className="text-xs text-slate-500">Saved pull request is not merged yet.</span>
+        )}
+      </div>
+    </form>
+  );
+}
+
 function useStudioSave() {
   const router = useRouter();
   const [pending, setPending] = useState(false);
@@ -513,11 +559,21 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function SaveButton({ pending, error, label }: { pending: boolean; error: string; label: string }) {
+function SaveButton({
+  pending,
+  error,
+  label,
+  pendingLabel = "Saving...",
+}: {
+  pending: boolean;
+  error: string;
+  label: string;
+  pendingLabel?: string;
+}) {
   return (
     <div>
       <button type="submit" disabled={pending} className={buttonClass}>
-        {pending ? "Saving..." : label}
+        {pending ? pendingLabel : label}
       </button>
       {error && <p className="mt-2 text-xs text-rose-300">{error}</p>}
     </div>

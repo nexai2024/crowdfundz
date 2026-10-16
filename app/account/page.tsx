@@ -1,14 +1,15 @@
 import Link from "next/link";
 import AccountAuthForm from "@/components/account-auth-form";
 import CreatorHome from "@/components/creator-home";
-import { getSessionUserId } from "@/lib/current-user";
+import { getSessionUser } from "@/lib/current-user";
 import { getStudioHome } from "@/lib/campaigns";
+import { isPlatformAdmin } from "@/lib/platform-admin";
 
 export const dynamic = "force-dynamic";
 
 export default async function AccountPage() {
-  const userId = await getSessionUserId();
-  const creator = userId ? await getStudioHome(userId).catch(() => null) : null;
+  const user = await getSessionUser();
+  const creator = user ? await getStudioHome(user.id).catch(() => null) : null;
 
   if (!creator) {
     return (
@@ -27,5 +28,5 @@ export default async function AccountPage() {
     );
   }
 
-  return <CreatorHome creator={creator} signedIn />;
+  return <CreatorHome creator={creator} signedIn platformAdmin={isPlatformAdmin(user?.email)} />;
 }

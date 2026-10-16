@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { creatorUrl, isOnCreatorHost, platformUrl } from "@/lib/hosts";
 import { isReservedSubdomain } from "@/lib/subdomain";
+import { allocationTotals } from "@/lib/escrow";
 import type {
   CampaignLandingData,
   CreatorHomeData,
@@ -114,6 +115,34 @@ export async function getStudioHome(userId: string): Promise<CreatorHomeData | n
     return b.totalRaised - a.totalRaised;
   });
 
+  const pledgesMade = await prisma.backer.findMany({
+    where: { email: { equals: creator.email, mode: "insensitive" } },
+    orderBy: { createdAt: "desc" },
+    take: 8,
+    select: {
+      id: true,
+      name: true,
+      amountUsd: true,
+      status: true,
+      createdAt: true,
+      campaign: { select: { title: true, slug: true, creator: { select: { subdomain: true } } } },
+    },
+  });
+
+  const recentPledges = campaigns.length === 0 ? [] : await prisma.backer.findMany({
+    where: { campaignId: { in: campaigns.map((campaign) => campaign.id) } },
+    orderBy: { createdAt: "desc" },
+    take: 8,
+    select: {
+      id: true,
+      name: true,
+      amountUsd: true,
+      status: true,
+      createdAt: true,
+      campaign: { select: { title: true, slug: true } },
+    },
+  });
+
   return {
     name,
     email: creator.email,
@@ -137,6 +166,24 @@ export async function getStudioHome(userId: string): Promise<CreatorHomeData | n
       backerCount: campaign.backerCount,
       href: subdomain ? `/${subdomain}/${campaign.slug}` : "",
     })),
+    recentPledges: recentPledges.map((pledge) => ({
+      id: pledge.id,
+      name: pledge.name,
+      amountUsd: pledge.amountUsd,
+      status: pledge.status,
+      projectTitle: pledge.campaign.title,
+      projectSlug: pledge.campaign.slug,
+      createdAt: pledge.createdAt.toISOString(),
+    })),
+    pledgesMade: pledgesMade.map((pledge) => ({
+      id: pledge.id,
+      name: pledge.campaign.creator.subdomain ? `${pledge.campaign.creator.subdomain}/${pledge.campaign.slug}` : pledge.campaign.slug,
+      amountUsd: pledge.amountUsd,
+      status: pledge.status,
+      projectTitle: pledge.campaign.title,
+      projectSlug: pledge.campaign.slug,
+      createdAt: pledge.createdAt.toISOString(),
+    })),
   };
 }
 
@@ -155,7 +202,15 @@ export async function getCampaignLanding(
     where: { creatorId_slug: { creatorId: creator.id, slug } },
     include: {
       tiers: { orderBy: { sortOrder: "asc" } },
-      phases: { orderBy: { sortOrder: "asc" } },
+      phases: {
+        orderBy: { sortOrder: "asc" },
+        include: {
+          allocations: {
+            where: { status: { in: ["HELD", "RELEASING", "RELEASED"] } },
+            select: { amountUsd: true, status: true },
+          },
+        },
+      },
       faqs: { orderBy: { sortOrder: "asc" } },
       backers: {
         where: { status: "SUCCEEDED" },
@@ -224,6 +279,8 @@ export async function getCampaignLanding(
       label: phase.label,
       title: phase.title,
       description: phase.description,
+      pullRequestMerged: Boolean(phase.pullRequestMergedAt),
+      ...allocationTotals(phase.allocations),
     })),
     faqs: campaign.faqs.map((faq) => ({
       question: faq.question,
