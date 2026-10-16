@@ -64,7 +64,7 @@ export default async function BackerWallPage({ params }: PageProps) {
           <p className="text-sm text-slate-400">No confirmed pledges on this project yet.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {campaign.backers.map((backer) => (
+            {campaign.backers.map((backer: any) => (
               <div
                 key={backer.id}
                 className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80 hover:border-emerald-500/30 transition flex flex-col justify-between"

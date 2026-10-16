@@ -101,14 +101,14 @@ export default async function SuccessPage({ params, searchParams }: PageProps) {
           </div>
           {entitled && ownsPledge?.tier.perks.length ? (
             <ul className="mt-4 space-y-1 text-xs text-slate-300">
-              {ownsPledge.tier.perks.map((perk) => (
+              {ownsPledge.tier.perks.map((perk: string) => (
                 <li key={perk}>{perk}</li>
               ))}
             </ul>
           ) : null}
           {paywalls.length > 0 && (
             <ul className="mt-4 space-y-2 text-xs">
-              {paywalls.map((paywall) => (
+              {paywalls.map((paywall: any) => (
                 <li key={paywall.id}>
                   <a href={paywall.contentUrl} className="text-emerald-300 underline" target="_blank" rel="noreferrer">
                     {paywall.title}
