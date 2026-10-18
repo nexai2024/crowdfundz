@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
-import { creatorPayoutCents, splitCardFeeCents } from "@/lib/platform-fee";
+import { creatorPayoutCents } from "@/lib/platform-fee";
 
 function wholeDollars(value: unknown): number | null {
   const amount = typeof value === "number" ? value : Number(value);
@@ -115,28 +115,12 @@ export async function settlePledgePayout(backerId: string) {
   });
   if (!backer || backer.status !== "SUCCEEDED" || !backer.stripeChargeId) return;
 
-  let cardFeeCents = backer.stripeFeeCents;
-  if (cardFeeCents == null) {
-    cardFeeCents = await stripeFeeCentsForCharge(backer.stripeChargeId);
-    if (cardFeeCents == null) return;
-    await prisma.backer.update({
-      where: { id: backer.id },
-      data: { stripeFeeCents: cardFeeCents },
-    });
-  }
-
-  const missingFee = backer.allocations.some((row) => row.cardFeeCents == null);
-  if (backer.fundingMode === "MILESTONE" && missingFee) {
-    const shares = splitCardFeeCents(
-      backer.allocations.map((row) => row.amountUsd),
-      cardFeeCents
-    );
-    for (let index = 0; index < backer.allocations.length; index += 1) {
-      const row = backer.allocations[index];
-      if (!row || row.cardFeeCents != null) continue;
-      await prisma.pledgeAllocation.update({
-        where: { id: row.id },
-        data: { cardFeeCents: shares[index] ?? 0 },
+  if (backer.stripeFeeCents == null) {
+    const cardFeeCents = await stripeFeeCentsForCharge(backer.stripeChargeId);
+    if (cardFeeCents != null) {
+      await prisma.backer.update({
+        where: { id: backer.id },
+        data: { stripeFeeCents: cardFeeCents },
       });
     }
   }
@@ -145,7 +129,23 @@ export async function settlePledgePayout(backerId: string) {
   const destination = backer.campaign.creator.stripeConnectAccountId;
   if (!destination) return;
 
-  const transferCents = creatorPayoutCents(backer.amountUsd, cardFeeCents);
+  const charge = await stripe.charges.retrieve(backer.stripeChargeId);
+  const destinationTransferId =
+    typeof charge.transfer === "string" ? charge.transfer : charge.transfer?.id ?? null;
+  if (destinationTransferId) {
+    await prisma.backer.updateMany({
+      where: { id: backer.id, stripeTransferId: null },
+      data: { stripeTransferId: destinationTransferId },
+    });
+    return;
+  }
+
+  if (backer.stripePaymentIntentId) {
+    const intent = await stripe.paymentIntents.retrieve(backer.stripePaymentIntentId);
+    if (intent.transfer_data?.destination) return;
+  }
+
+  const transferCents = creatorPayoutCents(backer.amountUsd);
   if (transferCents < 1) return;
 
   const transfer = await stripe.transfers.create(
@@ -202,21 +202,9 @@ export async function releaseSignedAllocations(phaseId: string) {
       continue;
     }
 
-    if (allocation.cardFeeCents == null) {
-      await settlePledgePayout(allocation.backer.id);
-    }
-    const priced = await prisma.pledgeAllocation.findUnique({
-      where: { id: allocation.id },
-      select: { cardFeeCents: true },
-    });
-    if (priced?.cardFeeCents == null) {
-      error = "The card fee is not available yet, so this amount stays held.";
-      continue;
-    }
-
-    const transferCents = creatorPayoutCents(allocation.amountUsd, priced.cardFeeCents);
+    const transferCents = creatorPayoutCents(allocation.amountUsd);
     if (transferCents < 1) {
-      error = "This slice does not cover the platform fee and card fee.";
+      error = "This slice does not cover the 5% application fee.";
       continue;
     }
 

@@ -61,8 +61,8 @@ export function PayoutSetup({ connected }: { connected: boolean }) {
       <h3 className="text-lg font-bold text-white">Payouts</h3>
       <p className="mt-2 text-sm text-slate-400">
         {connected
-          ? "A Stripe account is linked. Crowdventure keeps 5% of every pledge. Card processing and every other Stripe fee come out of your payout on top of that 5%. Instant pledges transfer when they are paid. Milestone pledges transfer after the pull request is merged and the backer signs off."
-          : "Connect Stripe before pledges can be paid out. Crowdventure keeps 5% of every pledge. Card processing and every other Stripe fee come out of your payout on top of that 5%."}
+          ? "A Stripe account is linked. Crowdventure keeps 5% of every pledge. Stripe charges its processing fee to your account on top of that 5%. Instant pledges are sent when they are paid. Milestone pledges are sent after the pull request is merged and the backer signs off."
+          : "Connect Stripe before pledges can be paid out. Crowdventure keeps 5%. Stripe charges its processing fee to your account on top of that 5%."}
       </p>
       {!connected && (
         <label className="mt-4 block text-sm text-slate-300">

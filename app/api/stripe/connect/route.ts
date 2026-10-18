@@ -3,6 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
 import { getSessionUser } from "@/lib/current-user";
 import { sameOriginOrForbid } from "@/lib/http";
+import {
+  destinationAccountConfiguration,
+  destinationResponsibilities,
+  prepareDestinationAccount,
+} from "@/lib/stripe-connect";
 
 export async function POST(request: Request) {
   const originBlock = sameOriginOrForbid(request);
@@ -48,20 +53,9 @@ export async function POST(request: Request) {
         contact_email: creator.email,
         dashboard: "express",
         identity: { country },
-        configuration: {
-          recipient: {
-            capabilities: {
-              stripe_balance: {
-                stripe_transfers: { requested: true },
-              },
-            },
-          },
-        },
+        configuration: destinationAccountConfiguration,
         defaults: {
-          responsibilities: {
-            fees_collector: "application",
-            losses_collector: "application",
-          },
+          responsibilities: destinationResponsibilities,
         },
         metadata: { userId: creator.id },
       });
@@ -70,6 +64,8 @@ export async function POST(request: Request) {
         where: { id: creator.id },
         data: { stripeConnectAccountId: accountId },
       });
+    } else {
+      await prepareDestinationAccount(accountId);
     }
 
     const origin = request.headers.get("origin") || process.env.BETTER_AUTH_URL || "http://localhost:3000";

@@ -11,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import type { CampaignLandingData, CampaignTierView } from "@/lib/landing-types";
+import { platformFeeCents } from "@/lib/platform-fee";
 
 import AnalyticsDashboard from "@/components/analytics-dashboard";
 import IdeIntegration from "@/components/ide-integration";
@@ -191,6 +192,7 @@ export default function CampaignLanding({ campaign }: { campaign: CampaignLandin
 
           <div className="flex justify-between items-center text-xs font-mono text-slate-500">
             <span>{progressPercent}% Funded</span>
+            <span>Crowdventure fee ${(platformFeeCents(totalRaised) / 100).toFixed(2)}</span>
             {campaign.daysRemaining !== null && (
               <span>
                 {campaign.daysRemaining} {campaign.daysRemaining === 1 ? "Day" : "Days"} Remaining
@@ -411,7 +413,12 @@ export default function CampaignLanding({ campaign }: { campaign: CampaignLandin
                 >
                   <div className="flex justify-between items-center text-slate-500 font-mono mb-1">
                     <span>#{backer.backerNumber}</span>
-                    <span className="text-emerald-400 font-semibold">${backer.amountUsd}</span>
+                    <span className="text-right">
+                      <span className="block text-emerald-400 font-semibold">${backer.amountUsd}</span>
+                      <span className="block text-[10px] text-slate-500">
+                        fee ${(backer.platformFeeCents / 100).toFixed(2)}
+                      </span>
+                    </span>
                   </div>
                   <div className="font-semibold text-white truncate">{backer.name}</div>
                   {backer.handle && (
@@ -539,7 +546,7 @@ export default function CampaignLanding({ campaign }: { campaign: CampaignLandin
               <fieldset className="space-y-2">
                 <legend className="block text-[11px] font-mono text-slate-400 mb-1">When the creator is paid</legend>
                 <p className="text-[11px] text-slate-500">
-                  Crowdventure keeps 5% of this pledge. Card processing and every other Stripe fee come out of the creator&apos;s payout on top of that 5%.
+                  Crowdventure keeps 5% of this pledge as a Stripe application fee. Stripe charges its processing fee to the creator&apos;s account, on top of that 5%.
                 </p>
                 <label className="flex items-start gap-2 rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-200">
                   <input

@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { ArrowLeft, Heart, Users } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { platformFeeCents } from "@/lib/platform-fee";
+import { confirmOpenPledges } from "@/lib/pledges";
 import { isOnCreatorHost } from "@/lib/hosts";
 import { isReservedSubdomain } from "@/lib/subdomain";
 
@@ -19,6 +21,13 @@ export default async function BackerWallPage({ params }: PageProps) {
     where: { subdomain: params.subdomain },
   });
   if (!creator) notFound();
+
+  const campaignRef = await prisma.campaign.findUnique({
+    where: { creatorId_slug: { creatorId: creator.id, slug: params.slug } },
+    select: { id: true },
+  });
+  if (!campaignRef) notFound();
+  await confirmOpenPledges([campaignRef.id]);
 
   const campaign = await prisma.campaign.findUnique({
     where: { creatorId_slug: { creatorId: creator.id, slug: params.slug } },
@@ -72,7 +81,12 @@ export default async function BackerWallPage({ params }: PageProps) {
                 <div>
                   <div className="flex justify-between items-center text-xs font-mono text-slate-500 mb-2">
                     <span>#{backer.backerNumber}</span>
-                    <span className="text-emerald-400 font-semibold">${backer.amountUsd}</span>
+                    <span className="text-right">
+                      <span className="block text-emerald-400 font-semibold">${backer.amountUsd}</span>
+                      <span className="block text-[10px] text-slate-500">
+                        fee ${(platformFeeCents(backer.amountUsd) / 100).toFixed(2)}
+                      </span>
+                    </span>
                   </div>
                   <div className="font-semibold text-white truncate">{backer.name}</div>
                   {backer.handle && (

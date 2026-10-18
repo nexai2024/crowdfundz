@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { creatorUrl, isOnCreatorHost, platformUrl } from "@/lib/hosts";
 import { isReservedSubdomain } from "@/lib/subdomain";
 import { allocationTotals } from "@/lib/escrow";
+import { platformFeeCents } from "@/lib/platform-fee";
+import { confirmOpenPledges } from "@/lib/pledges";
 import type {
   CampaignLandingData,
   CreatorHomeData,
@@ -115,6 +117,20 @@ export async function getStudioHome(userId: string): Promise<CreatorHomeData | n
     return b.totalRaised - a.totalRaised;
   });
 
+  const pendingBacked = await prisma.backer.findMany({
+    where: { email: { equals: creator.email, mode: "insensitive" }, status: "PENDING" },
+    select: { campaignId: true },
+  });
+  await confirmOpenPledges([
+    ...campaigns.map((campaign) => campaign.id),
+    ...pendingBacked.map((pledge) => pledge.campaignId),
+  ]);
+  const refreshed = campaigns.length === 0 ? [] : await prisma.campaign.findMany({
+    where: { id: { in: campaigns.map((campaign) => campaign.id) } },
+    select: { id: true, totalRaised: true, backerCount: true },
+  });
+  const totals = new Map(refreshed.map((campaign) => [campaign.id, campaign]));
+
   const pledgesMade = await prisma.backer.findMany({
     where: { email: { equals: creator.email, mode: "insensitive" } },
     orderBy: { createdAt: "desc" },
@@ -162,14 +178,15 @@ export async function getStudioHome(userId: string): Promise<CreatorHomeData | n
       tagline: campaign.tagline,
       status: campaign.status,
       targetGoal: campaign.targetGoal,
-      totalRaised: campaign.totalRaised,
-      backerCount: campaign.backerCount,
+      totalRaised: totals.get(campaign.id)?.totalRaised ?? campaign.totalRaised,
+      backerCount: totals.get(campaign.id)?.backerCount ?? campaign.backerCount,
       href: subdomain ? `/${subdomain}/${campaign.slug}` : "",
     })),
     recentPledges: recentPledges.map((pledge) => ({
       id: pledge.id,
       name: pledge.name,
       amountUsd: pledge.amountUsd,
+      platformFeeCents: platformFeeCents(pledge.amountUsd),
       status: pledge.status,
       projectTitle: pledge.campaign.title,
       projectSlug: pledge.campaign.slug,
@@ -179,6 +196,7 @@ export async function getStudioHome(userId: string): Promise<CreatorHomeData | n
       id: pledge.id,
       name: pledge.campaign.creator.subdomain ? `${pledge.campaign.creator.subdomain}/${pledge.campaign.slug}` : pledge.campaign.slug,
       amountUsd: pledge.amountUsd,
+      platformFeeCents: platformFeeCents(pledge.amountUsd),
       status: pledge.status,
       projectTitle: pledge.campaign.title,
       projectSlug: pledge.campaign.slug,
@@ -197,6 +215,13 @@ export async function getCampaignLanding(
     where: { subdomain },
   });
   if (!creator) return null;
+
+  const campaignRef = await prisma.campaign.findUnique({
+    where: { creatorId_slug: { creatorId: creator.id, slug } },
+    select: { id: true },
+  });
+  if (!campaignRef) return null;
+  await confirmOpenPledges([campaignRef.id]);
 
   const campaign = await prisma.campaign.findUnique({
     where: { creatorId_slug: { creatorId: creator.id, slug } },
@@ -271,6 +296,7 @@ export async function getCampaignLanding(
       name: backer.name,
       handle: backer.handle,
       amountUsd: backer.amountUsd,
+      platformFeeCents: platformFeeCents(backer.amountUsd),
       backerNumber: backer.backerNumber,
       message: backer.message,
     })),

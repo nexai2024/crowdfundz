@@ -7,6 +7,7 @@ import { ReconcileTool } from "@/components/reconcile-tool";
 import { EmailConfirmation, PayoutSetup } from "@/components/studio-account-tools";
 import PitchRefiner from "@/components/pitch-refiner";
 import type { CreatorHomeData } from "@/lib/landing-types";
+import { platformFeeCents } from "@/lib/platform-fee";
 
 const STATUS_LABEL = {
   DRAFT: "Draft",
@@ -153,7 +154,9 @@ export default function CreatorHome({
                   </div>
                   <div className="text-right">
                     <div className="font-mono text-white">${pledge.amountUsd.toLocaleString()}</div>
-                    <div className="text-[11px] font-mono text-slate-500">{pledge.status}</div>
+                    <div className="text-[11px] font-mono text-slate-500">
+                      fee ${(pledge.platformFeeCents / 100).toFixed(2)} · {pledge.status}
+                    </div>
                   </div>
                 </li>
               ))}
@@ -175,7 +178,9 @@ export default function CreatorHome({
                   </div>
                   <div className="text-right">
                     <div className="font-mono text-white">${pledge.amountUsd.toLocaleString()}</div>
-                    <div className="text-[11px] font-mono text-slate-500">{pledge.status}</div>
+                    <div className="text-[11px] font-mono text-slate-500">
+                      fee ${(pledge.platformFeeCents / 100).toFixed(2)} · {pledge.status}
+                    </div>
                   </div>
                 </li>
               ))}
@@ -284,7 +289,9 @@ function Progress({
         <span>
           <span className="text-white">${raised.toLocaleString()}</span> of ${goal.toLocaleString()}
         </span>
-        <span>{backers} backers</span>
+        <span>
+          {backers} backers · fee ${(platformFeeCents(raised) / 100).toFixed(2)}
+        </span>
       </div>
       <div className="h-2 rounded-full bg-slate-800 overflow-hidden">
         <div className="h-full rounded-full bg-emerald-500" style={{ width: `${percent}%` }} />

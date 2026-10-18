@@ -50,6 +50,14 @@ export async function applyPaidCheckoutSession(session: Stripe.Checkout.Session)
     const amountPaid = session.amount_total != null ? Math.round(session.amount_total / 100) : existing.amountUsd;
     const intentId = paymentIntentId(session.payment_intent);
     const chargeId = await chargeIdForIntent(intentId);
+    let cardFeeCents: number | null = null;
+    if (chargeId) {
+      try {
+        cardFeeCents = await stripeFeeCentsForCharge(chargeId);
+      } catch (error) {
+        console.error("Could not read the Stripe fee", error instanceof Error ? error.message : error);
+      }
+    }
     const updated = await prisma.backer.updateMany({
       where: { id: existing.id, status: "PENDING" },
       data: {
@@ -58,7 +66,7 @@ export async function applyPaidCheckoutSession(session: Stripe.Checkout.Session)
         entitledAt: new Date(),
         stripePaymentIntentId: intentId,
         stripeChargeId: chargeId,
-        stripeFeeCents: chargeId ? await stripeFeeCentsForCharge(chargeId) : null,
+        stripeFeeCents: cardFeeCents,
         amountUsd: amountPaid,
       },
     });
@@ -82,6 +90,32 @@ export async function applyPaidCheckoutSession(session: Stripe.Checkout.Session)
   return applied
     ? { applied: true as const, backerId: existing.id }
     : { applied: false as const, reason: "already" as const, backerId: existing.id };
+}
+
+/** Record Checkout sessions Stripe has already marked paid, including ones the webhook missed. */
+export async function confirmOpenPledges(campaignIds: string[]) {
+  if (!stripe || campaignIds.length === 0) return;
+  const pending = await prisma.backer.findMany({
+    where: {
+      campaignId: { in: campaignIds },
+      status: "PENDING",
+      stripeSessionId: { not: null },
+    },
+    select: { stripeSessionId: true },
+    take: 20,
+    orderBy: { createdAt: "asc" },
+  });
+  for (const pledge of pending) {
+    if (!pledge.stripeSessionId) continue;
+    try {
+      await confirmCheckoutSession(pledge.stripeSessionId);
+    } catch (error) {
+      console.error(
+        "Could not confirm checkout session",
+        error instanceof Error ? error.message : error
+      );
+    }
+  }
 }
 
 export async function confirmCheckoutSession(sessionId: string) {

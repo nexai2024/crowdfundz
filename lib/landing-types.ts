@@ -13,6 +13,7 @@ export type CampaignBackerView = {
   name: string;
   handle: string | null;
   amountUsd: number;
+  platformFeeCents: number;
   backerNumber: number;
   message: string | null;
 };
@@ -162,6 +163,7 @@ export type StudioPledge = {
   id: string;
   name: string;
   amountUsd: number;
+  platformFeeCents: number;
   status: "PENDING" | "SUCCEEDED" | "FAILED" | "REFUNDED" | "DISPUTED";
   projectTitle: string;
   projectSlug: string;

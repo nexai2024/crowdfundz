@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
-import { recipientTransfersActive } from "@/lib/stripe-connect";
+import { destinationChargesReady } from "@/lib/stripe-connect";
 import { isAllowedAppOrigin } from "@/lib/hosts";
 import { sameOriginOrForbid } from "@/lib/http";
 import { pledgeAllocations } from "@/lib/escrow";
+import { platformFeeCents } from "@/lib/platform-fee";
 
 type CheckoutBody = {
   tierId?: string;
@@ -84,10 +85,10 @@ export async function POST(req: Request) {
         { status: 503 }
       );
     }
-    const transfersActive = await recipientTransfersActive(destination);
+    const transfersActive = await destinationChargesReady(destination);
     if (!transfersActive) {
       return NextResponse.json(
-        { error: "This creator has not finished payout setup." },
+        { error: "This creator has not finished payout setup. Stripe still needs card payments enabled on their account." },
         { status: 503 }
       );
     }
@@ -141,7 +142,18 @@ export async function POST(req: Request) {
         ],
         success_url: `${origin}${path}/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${origin}${path}#tiers`,
-        payment_intent_data: { receipt_email: email },
+        payment_intent_data:
+          fundingMode === "INSTANT"
+            ? {
+                receipt_email: email,
+                application_fee_amount: platformFeeCents(tier.priceUsd),
+                on_behalf_of: destination,
+                transfer_data: { destination },
+              }
+            : {
+                receipt_email: email,
+                on_behalf_of: destination,
+              },
         metadata: {
           backerId: backer.id,
           campaignId: tier.campaignId,
