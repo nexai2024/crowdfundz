@@ -7,10 +7,11 @@ import { getStudioProject } from "@/lib/studio";
 export const dynamic = "force-dynamic";
 
 type PageProps = {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 };
 
-export default async function StudioProjectPage({ params }: PageProps) {
+export default async function StudioProjectPage(props: PageProps) {
+  const params = await props.params;
   const userId = await getSessionUserId();
   if (!userId) redirect("/account");
 

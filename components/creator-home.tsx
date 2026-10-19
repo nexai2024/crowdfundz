@@ -31,7 +31,7 @@ export default function CreatorHome({
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 bg-grid-pattern">
-      <header className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur sticky top-0 z-30 px-6 py-4">
+      <header className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-sm sticky top-0 z-30 px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
@@ -210,6 +210,12 @@ export default function CreatorHome({
                   className="mt-4 inline-flex rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-white hover:border-emerald-500"
                 >
                   Open platform reconcile
+                </Link>
+                <Link
+                  href="/admin/waitlist"
+                  className="mt-3 inline-flex rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-white hover:border-emerald-500"
+                >
+                  Review beta waitlist
                 </Link>
               </div>
             )}

@@ -5,6 +5,7 @@ import { dash } from "@better-auth/infra";
 import { isAllowedAppOrigin } from "./hosts";
 import { sendTransactionalEmail } from "./mail";
 import { prisma } from "./prisma";
+import { devtools } from "better-auth-devtools";
 
 function authBaseUrl() {
   const value = process.env.BETTER_AUTH_URL || "http://localhost:3000";
@@ -66,8 +67,6 @@ export const auth = betterAuth({
     },
   },
   plugins: [
-    dash()
-  ]
+    dash(), devtools({enabled: true})
+  ],
 });
-
-  

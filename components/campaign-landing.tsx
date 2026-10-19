@@ -119,7 +119,7 @@ export default function CampaignLanding({ campaign }: { campaign: CampaignLandin
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 bg-grid-pattern">
-      <header className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur sticky top-0 z-30 px-6 py-4">
+      <header className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-sm sticky top-0 z-30 px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
           <Link href={campaign.homeHref} className="flex items-center gap-3 min-w-0">
             <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
@@ -167,7 +167,7 @@ export default function CampaignLanding({ campaign }: { campaign: CampaignLandin
           {campaign.tagline}
         </p>
 
-        <div className="max-w-2xl mx-auto p-6 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur shadow-2xl text-left">
+        <div className="max-w-2xl mx-auto p-6 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-sm shadow-2xl text-left">
           <div className="flex justify-between items-baseline mb-3">
             <div>
               <span className="text-3xl font-extrabold font-mono text-white">
@@ -425,7 +425,7 @@ export default function CampaignLanding({ campaign }: { campaign: CampaignLandin
                     <div className="text-[11px] font-mono text-slate-400">@{backer.handle}</div>
                   )}
                   {backer.message && (
-                    <p className="mt-2 text-slate-300 italic text-[11px] bg-slate-950/60 p-2 rounded border border-slate-800/40">
+                    <p className="mt-2 text-slate-300 italic text-[11px] bg-slate-950/60 p-2 rounded-sm border border-slate-800/40">
                       &ldquo;{backer.message}&rdquo;
                     </p>
                   )}
@@ -477,7 +477,7 @@ export default function CampaignLanding({ campaign }: { campaign: CampaignLandin
       </footer>
 
       {selectedTier && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="max-w-lg w-full max-h-[90vh] overflow-y-auto bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl relative">
             <button
               onClick={() => setSelectedTier(null)}
@@ -503,7 +503,7 @@ export default function CampaignLanding({ campaign }: { campaign: CampaignLandin
                   value={backerName}
                   onChange={(event) => setBackerName(event.target.value)}
                   placeholder="e.g. Alex Morgan"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-hidden focus:border-emerald-500"
                 />
               </div>
               <div>
@@ -515,7 +515,7 @@ export default function CampaignLanding({ campaign }: { campaign: CampaignLandin
                   value={backerHandle}
                   onChange={(event) => setBackerHandle(event.target.value)}
                   placeholder="@handle"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-hidden focus:border-emerald-500"
                 />
               </div>
               <div>
@@ -526,7 +526,7 @@ export default function CampaignLanding({ campaign }: { campaign: CampaignLandin
                   value={backerEmail}
                   onChange={(event) => setBackerEmail(event.target.value)}
                   placeholder="alex@example.com"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-hidden focus:border-emerald-500"
                 />
               </div>
               <div>
@@ -539,7 +539,7 @@ export default function CampaignLanding({ campaign }: { campaign: CampaignLandin
                   value={backerMessage}
                   onChange={(event) => setBackerMessage(event.target.value)}
                   placeholder="e.g. Let's see this live"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-hidden focus:border-emerald-500"
                 />
               </div>
 

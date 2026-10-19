@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import type { ReactNode } from "react";
+import { Devtools } from "./devtools";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -39,6 +41,7 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable} dark`}>
       <body className="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased selection:bg-emerald-500 selection:text-slate-950">
         {children}
+        <Devtools />
       </body>
     </html>
   );

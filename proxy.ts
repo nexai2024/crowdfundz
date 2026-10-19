@@ -19,7 +19,7 @@ function isApiPath(pathname: string): boolean {
   return pathname === "/api" || pathname.startsWith("/api/");
 }
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // /api/auth and the rest of app/api are route handlers, not creator subdomains.
@@ -48,7 +48,7 @@ export async function middleware(req: NextRequest) {
       return NextResponse.rewrite(new URL(`/${subdomain}${pathname}`, req.url));
     }
   } catch (error) {
-    console.error("Middleware: Error fetching tenant:", error);
+    console.error("Proxy: Error fetching tenant:", error);
   }
 
   return new NextResponse(null, { status: 404 });

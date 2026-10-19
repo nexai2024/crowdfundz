@@ -11,11 +11,13 @@ import { confirmCheckoutSession } from "@/lib/pledges";
 export const dynamic = "force-dynamic";
 
 type PageProps = {
-  params: { subdomain: string; slug: string };
-  searchParams: { session_id?: string };
+  params: Promise<{ subdomain: string; slug: string }>;
+  searchParams: Promise<{ session_id?: string }>;
 };
 
-export default async function SuccessPage({ params, searchParams }: PageProps) {
+export default async function SuccessPage(props: PageProps) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   if (isReservedSubdomain(params.subdomain)) notFound();
 
   const creator = await prisma.user.findUnique({
@@ -64,7 +66,7 @@ export default async function SuccessPage({ params, searchParams }: PageProps) {
 
   const backerNumber = ownsPledge?.backerNumber;
   const backerName = ownsPledge?.name || "Fellow builder";
-  const host = headers().get("host") || "";
+  const host = (await headers()).get("host") || "";
   const onCreatorHost = isOnCreatorHost(host, params.subdomain);
   const campaignHref = onCreatorHost ? `/${params.slug}` : `/${params.subdomain}/${params.slug}`;
   const wallHref = `${campaignHref}/wall`;

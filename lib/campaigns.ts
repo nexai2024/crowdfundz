@@ -17,12 +17,12 @@ function daysRemaining(endsAt: Date | null): number | null {
   return Math.max(0, Math.ceil(ms / 86_400_000));
 }
 
-function requestHost(): string {
-  return headers().get("host") || "localhost:3000";
+async function requestHost(): Promise<string> {
+  return (await headers()).get("host") || "localhost:3000";
 }
 
 export async function getPlatformProjects(): Promise<PlatformProjectCard[]> {
-  const host = requestHost();
+  const host = await requestHost();
   const campaigns = await prisma.campaign.findMany({
     where: { status: "ACTIVE" },
     orderBy: { totalRaised: "desc" },
@@ -64,7 +64,7 @@ export async function getCreatorHome(subdomain: string): Promise<CreatorHomeData
 
   if (!creator) return null;
 
-  const host = requestHost();
+  const host = await requestHost();
   const onCreatorHost = isOnCreatorHost(host, subdomain);
   const name = creator.name || subdomain;
   const statusRank = { ACTIVE: 0, PAUSED: 1, DRAFT: 2, COMPLETED: 3 } as const;
@@ -256,7 +256,7 @@ export async function getCampaignLanding(
 
   if (!campaign) return null;
 
-  const host = requestHost();
+  const host = await requestHost();
   const onCreatorHost = isOnCreatorHost(host, subdomain);
   const metric = campaign.metrics[0];
 

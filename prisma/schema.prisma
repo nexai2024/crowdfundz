@@ -1,3 +1,4 @@
+
 datasource db {
   provider = "postgresql"
 }
@@ -68,81 +69,81 @@ model Verification {
 }
 
 model Campaign {
-  id              String         @id @default(cuid())
-  slug            String
-  title           String
-  tagline         String
-  story           String         @db.Text
-  eyebrow         String?
-  statusLabel     String?
-  manifestoTitle  String?
-  manifestoQuote  String?
-  endsAt          DateTime?
-  targetGoal      Int
-  totalRaised     Int            @default(0)
-  backerCount     Int            @default(0)
-  status          CampaignStatus @default(ACTIVE)
-  repoUrl         String?
-  repoBranch      String?        @default("main")
-  ideEditor       String?
+  id               String              @id @default(cuid())
+  slug             String
+  title            String
+  tagline          String
+  story            String              @db.Text
+  eyebrow          String?
+  statusLabel      String?
+  manifestoTitle   String?
+  manifestoQuote   String?
+  endsAt           DateTime?
+  targetGoal       Int
+  totalRaised      Int                 @default(0)
+  backerCount      Int                 @default(0)
+  status           CampaignStatus      @default(ACTIVE)
+  repoUrl          String?
+  repoBranch       String?             @default("main")
+  ideEditor        String?
   vercelProjectUrl String?
-  productionUrl   String?
-  previewUrl      String?
-  creatorId       String
-  creator         User           @relation(fields: [creatorId], references: [id])
-  tiers           Tier[]
-  tasks           Task[]
-  backers         Backer[]
-  phases          Phase[]
-  faqs            Faq[]
-  metrics         BuildMetric[]
-  ideUpdates      IdeUpdate[]
-  sandboxes       DemoSandbox[]
-  polls           GovernancePoll[]
-  bounties        Bounty[]
-  compliance      ComplianceCheck?
-  sponsors        SponsorSlot[]
-  collaborations  CollaborationLoop[]
-  paywalls        MilestonePaywall[]
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  productionUrl    String?
+  previewUrl       String?
+  creatorId        String
+  creator          User                @relation(fields: [creatorId], references: [id])
+  tiers            Tier[]
+  tasks            Task[]
+  backers          Backer[]
+  phases           Phase[]
+  faqs             Faq[]
+  metrics          BuildMetric[]
+  ideUpdates       IdeUpdate[]
+  sandboxes        DemoSandbox[]
+  polls            GovernancePoll[]
+  bounties         Bounty[]
+  compliance       ComplianceCheck?
+  sponsors         SponsorSlot[]
+  collaborations   CollaborationLoop[]
+  paywalls         MilestonePaywall[]
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
 
   @@unique([creatorId, slug])
   @@index([creatorId])
 }
 
 model BuildMetric {
-  id          String   @id @default(cuid())
-  campaignId  String
-  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  pageViews   Int      @default(0)
-  uniqueUsers Int      @default(0)
-  commitsCount Int     @default(0)
-  weeklyGrowth Float   @default(0.0)
-  recordedAt  DateTime @default(now())
+  id           String   @id @default(cuid())
+  campaignId   String
+  campaign     Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  pageViews    Int      @default(0)
+  uniqueUsers  Int      @default(0)
+  commitsCount Int      @default(0)
+  weeklyGrowth Float    @default(0.0)
+  recordedAt   DateTime @default(now())
 
   @@index([campaignId])
 }
 
 model IdeApiKey {
-  id          String   @id @default(cuid())
-  userId      String
-  key         String   @unique
-  name        String   @default("VSCode Extension")
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  userId    String
+  key       String   @unique
+  name      String   @default("VSCode Extension")
+  createdAt DateTime @default(now())
 }
 
 model IdeUpdate {
-  id          String   @id @default(cuid())
-  campaignId  String
-  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  editor      String   @default("VS Code")
-  commitHash  String?
+  id            String   @id @default(cuid())
+  campaignId    String
+  campaign      Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  editor        String   @default("VS Code")
+  commitHash    String?
   commitMessage String
-  linesAdded  Int      @default(0)
-  linesDeleted Int     @default(0)
-  fileChanged String?
-  createdAt   DateTime @default(now())
+  linesAdded    Int      @default(0)
+  linesDeleted  Int      @default(0)
+  fileChanged   String?
+  createdAt     DateTime @default(now())
 
   @@index([campaignId])
 }
@@ -204,27 +205,27 @@ model Bounty {
 }
 
 model BountySubmission {
-  id            String   @id @default(cuid())
-  bountyId      String
-  bounty        Bounty   @relation(fields: [bountyId], references: [id], onDelete: Cascade)
-  contributorName String
+  id               String   @id @default(cuid())
+  bountyId         String
+  bounty           Bounty   @relation(fields: [bountyId], references: [id], onDelete: Cascade)
+  contributorName  String
   contributorEmail String
-  submissionUrl String
-  status        String   @default("PENDING")
-  createdAt     DateTime @default(now())
+  submissionUrl    String
+  status           String   @default("PENDING")
+  createdAt        DateTime @default(now())
 
   @@index([bountyId])
 }
 
 model ComplianceCheck {
-  id                String   @id @default(cuid())
-  campaignId        String   @unique
-  campaign          Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  disclaimerVerified Boolean @default(false)
-  kycStatus         String   @default("UNVERIFIED")
-  jurisdiction      String   @default("UNSET")
-  taxFormFiled      Boolean  @default(false)
-  lastAuditedAt     DateTime @default(now())
+  id                 String   @id @default(cuid())
+  campaignId         String   @unique
+  campaign           Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  disclaimerVerified Boolean  @default(false)
+  kycStatus          String   @default("UNVERIFIED")
+  jurisdiction       String   @default("UNSET")
+  taxFormFiled       Boolean  @default(false)
+  lastAuditedAt      DateTime @default(now())
 }
 
 model SponsorSlot {
@@ -243,14 +244,14 @@ model SponsorSlot {
 }
 
 model CollaborationLoop {
-  id                String   @id @default(cuid())
-  campaignId        String
-  campaign          Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  partnerSubdomain  String
-  partnerSlug       String
-  partnerTitle      String
-  discountPercentage Int     @default(10)
-  createdAt         DateTime @default(now())
+  id                 String   @id @default(cuid())
+  campaignId         String
+  campaign           Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  partnerSubdomain   String
+  partnerSlug        String
+  partnerTitle       String
+  discountPercentage Int      @default(10)
+  createdAt          DateTime @default(now())
 
   @@index([campaignId])
 }
@@ -270,17 +271,17 @@ model MilestonePaywall {
 }
 
 model Phase {
-  id          String   @id @default(cuid())
-  campaignId  String
-  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  label       String
-  title       String
-  description String   @db.Text
-  sortOrder          Int      @default(0)
-  pullRequestUrl     String?
+  id                  String             @id @default(cuid())
+  campaignId          String
+  campaign            Campaign           @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  label               String
+  title               String
+  description         String             @db.Text
+  sortOrder           Int                @default(0)
+  pullRequestUrl      String?
   pullRequestMergedAt DateTime?
-  tasks              Task[]
-  allocations        PledgeAllocation[]
+  tasks               Task[]
+  allocations         PledgeAllocation[]
 
   @@index([campaignId])
 }
@@ -327,43 +328,43 @@ enum CampaignStatus {
 }
 
 model Tier {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   campaignId  String
-  campaign    Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   name        String
   priceUsd    Int
   description String
   perks       String[]
   badge       String?
-  featured    Boolean   @default(false)
+  featured    Boolean  @default(false)
   limit       Int?
   backers     Backer[]
-  sortOrder   Int       @default(0)
+  sortOrder   Int      @default(0)
 
   @@index([campaignId])
 }
 
 model Backer {
-  id              String        @id @default(cuid())
-  campaignId      String
-  campaign        Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  tierId          String
-  tier            Tier          @relation(fields: [tierId], references: [id])
-  email           String
-  name            String
-  handle          String?
-  message         String?       @db.VarChar(120)
+  id                    String             @id @default(cuid())
+  campaignId            String
+  campaign              Campaign           @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  tierId                String
+  tier                  Tier               @relation(fields: [tierId], references: [id])
+  email                 String
+  name                  String
+  handle                String?
+  message               String?            @db.VarChar(120)
   amountUsd             Int
-  status                PaymentStatus @default(PENDING)
-  stripeSessionId       String?       @unique
-  stripePaymentIntentId String?       @unique
-  stripeChargeId        String?       @unique
+  status                PaymentStatus      @default(PENDING)
+  stripeSessionId       String?            @unique
+  stripePaymentIntentId String?            @unique
+  stripeChargeId        String?            @unique
   stripeFeeCents        Int?
-  stripeTransferId      String?       @unique
-  fundingMode           FundingMode   @default(INSTANT)
+  stripeTransferId      String?            @unique
+  fundingMode           FundingMode        @default(INSTANT)
   entitledAt            DateTime?
-  backerNumber          Int           @default(autoincrement())
-  createdAt             DateTime      @default(now())
+  backerNumber          Int                @default(autoincrement())
+  createdAt             DateTime           @default(now())
   allocations           PledgeAllocation[]
 
   @@index([campaignId])
@@ -409,4 +410,25 @@ enum PaymentStatus {
   FAILED
   REFUNDED
   DISPUTED
+}
+
+enum WaitlistStatus {
+  pending
+  approved
+  rejected
+  promoted
+}
+
+model WaitlistEntry {
+  id              String         @id @default(cuid())
+  name            String
+  email           String         @unique
+  message         String?        @db.Text
+  status          WaitlistStatus @default(pending)
+  source          String         @default("waitlist")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  statusChangedAt DateTime       @default(now()) @map("status_changed_at")
+
+  @@index([status, createdAt], map: "waitlist_status_created_at_idx")
+  @@map("waitlist")
 }

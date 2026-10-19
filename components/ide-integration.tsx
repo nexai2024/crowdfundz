@@ -9,7 +9,7 @@ export default function IdeIntegration({
   if (initialUpdates.length === 0) return null;
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur">
+    <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur-sm">
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Terminal className="h-5 w-5 text-emerald-400" />

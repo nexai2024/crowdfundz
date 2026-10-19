@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 export async function getSessionUserId(): Promise<string | null> {
   try {
     const session = await auth.api.getSession({
-      headers: headers(),
+      headers: await headers(),
     });
     return session?.user?.id ?? null;
   } catch (error) {

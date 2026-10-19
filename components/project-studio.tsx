@@ -7,7 +7,7 @@ import { ArrowUpRight, Zap } from "lucide-react";
 import type { StudioProject, StudioTask } from "@/lib/studio";
 
 const inputClass =
-  "w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-600 focus:border-emerald-500 focus:outline-none";
+  "w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-600 focus:border-emerald-500 focus:outline-hidden";
 const buttonClass =
   "rounded-lg bg-emerald-500 px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-950 transition hover:bg-emerald-400 disabled:opacity-50";
 
@@ -20,7 +20,7 @@ const TASK_STATUS = {
 export default function ProjectStudio({ project }: { project: StudioProject }) {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
-      <header className="sticky top-0 z-30 border-b border-slate-800/80 bg-slate-950/90 px-6 py-4 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-slate-800/80 bg-slate-950/90 px-6 py-4 backdrop-blur-sm">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
           <Link href="/account" className="flex min-w-0 items-center gap-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-400">

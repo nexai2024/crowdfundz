@@ -14,7 +14,7 @@ export default function MilestonePaywall({
   if (paywalls.length === 0) return null;
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur">
+    <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur-sm">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Key className="h-5 w-5 text-emerald-400" />

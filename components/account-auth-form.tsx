@@ -9,12 +9,14 @@ import { normalizeSubdomain, subdomainError } from "@/lib/subdomain";
 export default function AccountAuthForm({
   initialMode = "sign-up",
   redirectTo,
+  allowSignUp = true,
 }: {
   initialMode?: "sign-in" | "sign-up";
   redirectTo?: string;
+  allowSignUp?: boolean;
 }) {
   const router = useRouter();
-  const [mode, setMode] = useState<"sign-in" | "sign-up">(initialMode);
+  const [mode, setMode] = useState<"sign-in" | "sign-up">(allowSignUp ? initialMode : "sign-in");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -45,6 +47,10 @@ export default function AccountAuthForm({
 
     try {
       if (mode === "sign-up") {
+        if (!allowSignUp) {
+          setError("waitlist only");
+          return;
+        }
         const invalid = subdomainError(subdomain);
         if (invalid) {
           setError(invalid);
@@ -102,7 +108,7 @@ export default function AccountAuthForm({
                 required
                 value={name}
                 onChange={(event) => setName(event.target.value)}
-                className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none"
+                className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-hidden"
               />
             </label>
             <label className="block">
@@ -114,7 +120,7 @@ export default function AccountAuthForm({
                 value={subdomain}
                 onChange={(event) => setSubdomain(event.target.value)}
                 placeholder="your-name"
-                className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:border-emerald-500 focus:outline-none"
+                className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:border-emerald-500 focus:outline-hidden"
               />
               <span className="mt-1.5 block font-mono text-[11px] text-slate-500">
                 <span className="text-emerald-300">{preview}</span>.crowdventure.quest
@@ -131,7 +137,7 @@ export default function AccountAuthForm({
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none"
+            className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-hidden"
           />
         </label>
         <label className="block">
@@ -144,7 +150,7 @@ export default function AccountAuthForm({
             minLength={8}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none"
+            className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-hidden"
           />
         </label>
       </div>
@@ -167,13 +173,19 @@ export default function AccountAuthForm({
           Forgot password
         </Link>
       )}
-      <button
-        type="button"
-        onClick={() => setMode(mode === "sign-up" ? "sign-in" : "sign-up")}
-        className="mt-3 w-full text-sm text-slate-400 hover:text-emerald-300"
-      >
-        {mode === "sign-up" ? "Already have an account? Sign in" : "Need an account? Create one"}
-      </button>
+      {allowSignUp ? (
+        <button
+          type="button"
+          onClick={() => setMode(mode === "sign-up" ? "sign-in" : "sign-up")}
+          className="mt-3 w-full text-sm text-slate-400 hover:text-emerald-300"
+        >
+          {mode === "sign-up" ? "Already have an account? Sign in" : "Need an account? Create one"}
+        </button>
+      ) : (
+        <Link href="/waitlist" className="mt-3 block text-center text-sm text-slate-400 hover:text-emerald-300">
+          New here? Join the waitlist
+        </Link>
+      )}
     </form>
   );
 }

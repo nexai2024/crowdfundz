@@ -6,10 +6,11 @@ import { getCampaignLanding } from "@/lib/campaigns";
 export const dynamic = "force-dynamic";
 
 type PageProps = {
-  params: { subdomain: string; slug: string };
+  params: Promise<{ subdomain: string; slug: string }>;
 };
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata(props: PageProps): Promise<Metadata> {
+  const params = await props.params;
   const campaign = await getCampaignLanding(params.subdomain, params.slug).catch(() => null);
   if (!campaign) return { title: "Project not found" };
   return {
@@ -18,7 +19,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function CampaignPage({ params }: PageProps) {
+export default async function CampaignPage(props: PageProps) {
+  const params = await props.params;
   const campaign = await getCampaignLanding(params.subdomain, params.slug).catch((error) => {
     console.error("CampaignPage: could not load project", error);
     return null;

@@ -13,7 +13,7 @@ export default function MarketingHome({
 }) {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 bg-grid-pattern">
-      <nav className="sticky top-0 z-30 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur">
+      <nav className="sticky top-0 z-30 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-sm">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-6">
           <Link href="/" className="flex items-center gap-2 font-mono text-sm font-bold tracking-tight text-white">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
@@ -58,7 +58,7 @@ export default function MarketingHome({
       <header className="mx-auto max-w-6xl px-6 pb-16 pt-20 text-center">
         <h1 className="mx-auto max-w-4xl text-5xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-7xl">
           Back Independence.
-          <span className="mt-2 block bg-gradient-to-r from-emerald-300 to-teal-100 bg-clip-text text-transparent">
+          <span className="mt-2 block bg-linear-to-r from-emerald-300 to-teal-100 bg-clip-text text-transparent">
             Fuel Direct Innovation.
           </span>
         </h1>

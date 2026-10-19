@@ -11,7 +11,7 @@ export default function BountyBoard({
   if (bounties.length === 0) return null;
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur">
+    <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur-sm">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Award className="h-5 w-5 text-emerald-400" />
@@ -31,7 +31,7 @@ export default function BountyBoard({
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-bold text-white text-sm">{b.title}</span>
-                <span className="px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px]">
+                <span className="px-2 py-0.5 rounded-sm bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px]">
                   {b.status}
                 </span>
               </div>

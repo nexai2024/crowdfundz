@@ -47,7 +47,7 @@ export default function TokenizedGovernance({
   };
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur">
+    <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur-sm">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Vote className="h-5 w-5 text-emerald-400" />
@@ -89,7 +89,7 @@ export default function TokenizedGovernance({
                 value={voterEmail}
                 onChange={(e) => setVoterEmail(e.target.value)}
                 placeholder="Backer Email Address"
-                className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 font-mono"
+                className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-hidden focus:border-emerald-500 font-mono"
               />
               <button
                 type="submit"

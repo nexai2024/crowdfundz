@@ -6,10 +6,11 @@ import { getCreatorHome } from "@/lib/campaigns";
 export const dynamic = "force-dynamic";
 
 type PageProps = {
-  params: { subdomain: string };
+  params: Promise<{ subdomain: string }>;
 };
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata(props: PageProps): Promise<Metadata> {
+  const params = await props.params;
   const creator = await getCreatorHome(params.subdomain).catch(() => null);
   if (!creator) return { title: "Creator not found" };
   return {
@@ -18,7 +19,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function SubdomainPage({ params }: PageProps) {
+export default async function SubdomainPage(props: PageProps) {
+  const params = await props.params;
   const creator = await getCreatorHome(params.subdomain).catch((error) => {
     console.error("SubdomainPage: could not load creator", error);
     return null;

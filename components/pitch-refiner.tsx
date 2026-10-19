@@ -49,7 +49,7 @@ export default function PitchRefiner({
   };
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur">
+    <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur-sm">
       <div className="flex items-center gap-2 mb-4">
         <Sparkles className="h-5 w-5 text-emerald-400" />
         <div>
@@ -66,7 +66,7 @@ export default function PitchRefiner({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Project Title"
-            className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 font-mono"
+            className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-hidden focus:border-emerald-500 font-mono"
           />
           <input
             type="number"
@@ -74,7 +74,7 @@ export default function PitchRefiner({
             value={goal}
             onChange={(e) => setGoal(Number(e.target.value))}
             placeholder="Goal USD"
-            className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 font-mono"
+            className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-hidden focus:border-emerald-500 font-mono"
           />
         </div>
         <input
@@ -83,7 +83,7 @@ export default function PitchRefiner({
           value={tagline}
           onChange={(e) => setTagline(e.target.value)}
           placeholder="Tagline pitch..."
-          className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 font-mono"
+          className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-hidden focus:border-emerald-500 font-mono"
         />
         <textarea
           rows={3}
@@ -91,7 +91,7 @@ export default function PitchRefiner({
           value={story}
           onChange={(e) => setStory(e.target.value)}
           placeholder="Project story and manifesto..."
-          className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 font-mono"
+          className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-hidden focus:border-emerald-500 font-mono"
         />
         <button
           type="submit"
@@ -122,7 +122,7 @@ export default function PitchRefiner({
 
           <div className="pt-2 border-t border-slate-800">
             <span className="text-slate-400 block mb-1">Recommended Tagline:</span>
-            <div className="p-2 rounded bg-slate-900 border border-slate-800 text-emerald-300 flex items-center justify-between">
+            <div className="p-2 rounded-sm bg-slate-900 border border-slate-800 text-emerald-300 flex items-center justify-between">
               <span>{result.refinedTagline}</span>
               <CheckCircle className="h-4 w-4 text-emerald-400 shrink-0 ml-2" />
             </div>

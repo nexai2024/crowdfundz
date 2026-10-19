@@ -11,10 +11,11 @@ import { isReservedSubdomain } from "@/lib/subdomain";
 export const dynamic = "force-dynamic";
 
 type PageProps = {
-  params: { subdomain: string; slug: string };
+  params: Promise<{ subdomain: string; slug: string }>;
 };
 
-export default async function BackerWallPage({ params }: PageProps) {
+export default async function BackerWallPage(props: PageProps) {
+  const params = await props.params;
   if (isReservedSubdomain(params.subdomain)) notFound();
 
   const creator = await prisma.user.findUnique({
@@ -41,7 +42,7 @@ export default async function BackerWallPage({ params }: PageProps) {
   });
   if (!campaign) notFound();
 
-  const host = headers().get("host") || "";
+  const host = (await headers()).get("host") || "";
   const campaignHref = isOnCreatorHost(host, params.subdomain)
     ? `/${params.slug}`
     : `/${params.subdomain}/${params.slug}`;

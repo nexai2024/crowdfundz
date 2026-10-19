@@ -61,7 +61,7 @@ export default function ClaimSubdomainPrompt({ projectCount }: { projectCount: n
             value={subdomain}
             onChange={(event) => setSubdomain(event.target.value)}
             placeholder="your-name"
-            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:border-emerald-500 focus:outline-none"
+            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:border-emerald-500 focus:outline-hidden"
           />
         </label>
         <button
