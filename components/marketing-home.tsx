@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { ArrowRight, Globe, Lock, ShieldCheck, Users, Zap } from "lucide-react";
 import AccountAuthForm from "@/components/account-auth-form";
+import { LandingShot } from "@/components/landing-shot";
 import type { PlatformProjectCard } from "@/lib/landing-types";
 
 export default function MarketingHome({
@@ -81,6 +82,13 @@ export default function MarketingHome({
             Launch as a Creator
           </a>
         </div>
+        <div className="mx-auto mt-14 max-w-5xl text-left">
+          <LandingShot
+            src="/marketing/hero-dashboard.jpg"
+            alt="A CrowdVenture studio dashboard with commit history, milestone progress, funding trends, and the backer ledger."
+            priority
+          />
+        </div>
         <div className="mt-14 flex flex-wrap items-center justify-center gap-x-10 gap-y-4 border-t border-slate-800 pt-8 text-sm text-slate-400">
           <span className="inline-flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-emerald-400" /> Zero Equity Dilution
@@ -103,6 +111,12 @@ export default function MarketingHome({
             <h2 className="mt-2 text-4xl font-bold tracking-tight text-white">
               Built for those who create and those who see the future.
             </h2>
+          </div>
+          <div className="mb-12">
+            <LandingShot
+              src="/marketing/breakthrough.jpg"
+              alt="A green launch breaking through a dark maze, carrying a rocket, code, and a lightbulb."
+            />
           </div>
           <div id="features" className="grid scroll-mt-24 gap-4 md:grid-cols-3">
             <Feature
@@ -136,15 +150,7 @@ export default function MarketingHome({
             a dedicated micro-patronage subdomain powered by Stripe. Secure recurring operational
             runway directly from users who need what you build.
           </p>
-          <a
-            href={signedIn ? "/account" : "#start-subdomain"}
-            className="mt-8 inline-flex items-center gap-2 text-sm font-semibold text-emerald-300 hover:text-emerald-200"
-          >
-            Start Your Project Subdomain <ArrowRight className="h-4 w-4" />
-          </a>
-        </div>
-        <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-8 sm:p-10">
-          <div className="space-y-8">
+          <div className="mt-8 space-y-6">
             <Pitch title="Dedicated Subdomains" body="yourproject.crowdventure.quest" />
             <Pitch
               title="Native Stripe Connect"
@@ -156,7 +162,17 @@ export default function MarketingHome({
               last
             />
           </div>
+          <a
+            href={signedIn ? "/account" : "#start-subdomain"}
+            className="mt-8 inline-flex items-center gap-2 text-sm font-semibold text-emerald-300 hover:text-emerald-200"
+          >
+            Start Your Project Subdomain <ArrowRight className="h-4 w-4" />
+          </a>
         </div>
+        <LandingShot
+          src="/marketing/builder-desk.jpg"
+          alt="A maker's desk with code on one screen and the CrowdVenture studio on the other."
+        />
       </section>
 
       <section id="explore" className="mx-auto max-w-6xl px-6 pb-8">

@@ -2,13 +2,12 @@ import Link from "next/link";
 import {
   ArrowRight,
   GitCommitHorizontal,
-  Globe,
   Lock,
   ShieldCheck,
-  Terminal,
   Users,
   Zap,
 } from "lucide-react";
+import { LandingShot } from "@/components/landing-shot";
 import WaitlistForm from "@/components/waitlist-form";
 import { getPlatformProjects } from "@/lib/campaigns";
 import type { PlatformProjectCard } from "@/lib/landing-types";
@@ -93,7 +92,11 @@ export default async function WaitlistLanding() {
             </li>
           </ul>
         </div>
-        <CampaignFrame />
+        <LandingShot
+          src="/marketing/hero-dashboard.jpg"
+          alt="A CrowdVenture studio dashboard with commit history, milestone progress, funding trends, and the backer ledger."
+          priority
+        />
       </header>
 
       <section className="border-y border-slate-900 bg-slate-950/50 px-6 py-20">
@@ -102,6 +105,12 @@ export default async function WaitlistLanding() {
           <h2 className="mt-3 max-w-3xl text-4xl font-bold tracking-tight text-white">
             A trailer goes quiet. A funding round takes the company. A studio stays in public.
           </h2>
+          <div className="mt-10">
+            <LandingShot
+              src="/marketing/breakthrough.jpg"
+              alt="A green launch breaking through a dark maze, carrying a rocket, code, and a lightbulb."
+            />
+          </div>
           <div className="mt-12 grid gap-4 md:grid-cols-3">
             <Contrast
               kicker="The trailer"
@@ -153,7 +162,13 @@ export default async function WaitlistLanding() {
               />
             </ol>
           </div>
-          <PhaseBoard />
+          <div className="space-y-6">
+            <LandingShot
+              src="/marketing/builder-desk.jpg"
+              alt="A maker's desk with code on one screen and the CrowdVenture studio on the other."
+            />
+            <PhaseBoard />
+          </div>
         </div>
       </section>
 
@@ -252,42 +267,6 @@ export default async function WaitlistLanding() {
         </div>
       </section>
 
-    </div>
-  );
-}
-
-function CampaignFrame() {
-  return (
-    <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-4 shadow-2xl shadow-emerald-950/40">
-      <div className="flex items-center gap-2 border-b border-slate-800 px-3 py-2 font-mono text-[11px] text-slate-500">
-        <Globe className="h-3.5 w-3.5 text-emerald-400" />
-        atlas.crowdventure.quest/ledger
-        <span className="ml-auto text-slate-600">Illustration</span>
-      </div>
-      <div className="p-5">
-        <p className="font-mono text-[11px] uppercase tracking-wider text-emerald-400">A studio page</p>
-        <h2 className="mt-2 text-2xl font-bold text-white">Ledger</h2>
-        <p className="mt-2 text-sm text-slate-400">Invoices that write themselves from the work already shipped.</p>
-        <div className="mt-5 h-2 overflow-hidden rounded-full bg-slate-800">
-          <div className="h-full w-[62%] rounded-full bg-emerald-500" />
-        </div>
-        <div className="mt-2 flex justify-between font-mono text-[11px] text-slate-500">
-          <span>Raised against a public goal</span>
-          <span>Backers on the wall</span>
-        </div>
-        <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-950 p-4">
-          <div className="flex items-center gap-2 font-mono text-[11px] text-emerald-300">
-            <Terminal className="h-3.5 w-3.5" />
-            main · from the editor
-          </div>
-          <p className="mt-2 text-sm text-slate-200">Ship the invoice draft</p>
-          <p className="mt-1 font-mono text-[11px] text-slate-500">Commit, file, and lines changed, on the campaign</p>
-        </div>
-        <div className="mt-3 flex items-center justify-between rounded-2xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-sm">
-          <span className="text-slate-300">Phase 02 · editor</span>
-          <span className="font-mono text-xs text-emerald-300">$400 held</span>
-        </div>
-      </div>
     </div>
   );
 }
