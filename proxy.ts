@@ -27,6 +27,11 @@ export async function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // Legal pages stay on the app router even when the host is a creator subdomain.
+  if (pathname === "/legal" || pathname.startsWith("/legal/") || pathname === "/community" || pathname.startsWith("/community/")) {
+    return NextResponse.next();
+  }
+
   const hostname = (req.headers.get("host") || "").split(":")[0];
   const isApex = APEX_HOSTS.has(hostname);
   const subdomain = isApex ? "" : hostname.split(".")[0] ?? "";

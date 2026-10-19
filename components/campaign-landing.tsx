@@ -11,7 +11,9 @@ import {
   X,
 } from "lucide-react";
 import type { CampaignLandingData, CampaignTierView } from "@/lib/landing-types";
+import type { ProjectRoom } from "@/lib/community";
 import { platformFeeCents } from "@/lib/platform-fee";
+import { CommunityRoom } from "@/components/community/community-room";
 
 import AnalyticsDashboard from "@/components/analytics-dashboard";
 import IdeIntegration from "@/components/ide-integration";
@@ -23,7 +25,13 @@ import SponsorSpace from "@/components/sponsor-space";
 import CollaborationLoops from "@/components/collaboration-loops";
 import MilestonePaywall from "@/components/milestone-paywall";
 
-export default function CampaignLanding({ campaign }: { campaign: CampaignLandingData }) {
+export default function CampaignLanding({
+  campaign,
+  community,
+}: {
+  campaign: CampaignLandingData;
+  community?: ProjectRoom | null;
+}) {
   const [selectedTier, setSelectedTier] = useState<CampaignTierView | null>(null);
   const [activePhaseIndex, setActivePhaseIndex] = useState(0);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
@@ -466,6 +474,8 @@ export default function CampaignLanding({ campaign }: { campaign: CampaignLandin
           </div>
         </section>
       )}
+
+      {community ? <CommunityRoom room={community} compact /> : null}
 
       <footer className="border-t border-slate-900 px-6 py-8 text-center text-xs font-mono text-slate-500">
         <p>

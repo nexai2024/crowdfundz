@@ -3,9 +3,12 @@ import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { ArrowRight, CheckCircle2, Share2, ShieldCheck } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { isOnCreatorHost } from "@/lib/hosts";
+import { isOnCreatorHost, platformUrl } from "@/lib/hosts";
 import { isReservedSubdomain } from "@/lib/subdomain";
 import PledgeHold from "@/components/pledge-hold";
+import { PledgeRoomInvite } from "@/components/pledge-room-invite";
+import { getRoomInvite } from "@/lib/community";
+import { getSessionUserId } from "@/lib/current-user";
 import { confirmCheckoutSession } from "@/lib/pledges";
 
 export const dynamic = "force-dynamic";
@@ -66,6 +69,11 @@ export default async function SuccessPage(props: PageProps) {
 
   const backerNumber = ownsPledge?.backerNumber;
   const backerName = ownsPledge?.name || "Fellow builder";
+  const userId = await getSessionUserId();
+  const roomInvite = await getRoomInvite(params.subdomain, params.slug, userId).catch((error) => {
+    console.error("SuccessPage: could not load project room", error);
+    return null;
+  });
   const host = (await headers()).get("host") || "";
   const onCreatorHost = isOnCreatorHost(host, params.subdomain);
   const campaignHref = onCreatorHost ? `/${params.slug}` : `/${params.subdomain}/${params.slug}`;
@@ -73,6 +81,10 @@ export default async function SuccessPage(props: PageProps) {
   const shareText = encodeURIComponent(
     `I just backed ${campaign.title}. ${campaign.tagline}`
   );
+  const returnPath = `/${params.subdomain}/${params.slug}/success${
+    searchParams.session_id ? `?session_id=${encodeURIComponent(searchParams.session_id)}` : ""
+  }`;
+  const signInHref = `${platformUrl(host)}/account?next=${encodeURIComponent(returnPath)}`;
   const shareUrl = encodeURIComponent(
     onCreatorHost
       ? `https://${params.subdomain}.${host.split(".").slice(-2).join(".")}/${params.slug}`
@@ -149,6 +161,18 @@ export default async function SuccessPage(props: PageProps) {
             </ul>
           )}
         </div>
+
+        {roomInvite ? (
+          <PledgeRoomInvite
+            subdomain={roomInvite.subdomain}
+            slug={roomInvite.slug}
+            title={roomInvite.title}
+            signedIn={roomInvite.signedIn}
+            joined={roomInvite.joined}
+            roomHref={roomInvite.href}
+            signInHref={signInHref}
+          />
+        ) : null}
 
         <div className="flex flex-col sm:flex-row gap-3">
           <a

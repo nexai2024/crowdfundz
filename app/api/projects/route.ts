@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/current-user";
 import { sameOriginOrForbid } from "@/lib/http";
+import { ensureMainCommunity } from "@/lib/community";
 import { normalizeSlug, slugError } from "@/lib/subdomain";
 
 type ProjectBody = {
@@ -71,6 +72,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const mainCommunity = await ensureMainCommunity();
     const campaign = await prisma.campaign.create({
       data: {
         creatorId: sessionUser.id,
@@ -83,6 +85,7 @@ export async function POST(request: NextRequest) {
         manifestoTitle: `Why ${title} exists`,
         targetGoal,
         status: "ACTIVE",
+        subcommunity: { create: { communityId: mainCommunity.id } },
         tiers: {
           create: {
             name: tierName,

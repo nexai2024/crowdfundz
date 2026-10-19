@@ -39,6 +39,10 @@ html {
   color-scheme: dark;
 }
 
+dialog::backdrop {
+  background: rgb(0 0 0 / 0.75);
+}
+
 body {
   background-color: var(--background);
   color: var(--foreground);

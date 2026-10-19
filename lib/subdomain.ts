@@ -10,6 +10,8 @@ const RESERVED = new Set([
   "localhost",
   "crowdventure",
   "venturesolo",
+  "community",
+  "legal",
 ]);
 
 const SUBDOMAIN_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/;

@@ -8,20 +8,23 @@ generator client {
 }
 
 model User {
-  id                     String     @id @default(cuid())
-  email                  String     @unique
+  id                     String        @id @default(cuid())
+  email                  String        @unique
   name                   String?
-  emailVerified          Boolean    @default(false)
+  emailVerified          Boolean       @default(false)
   image                  String?
-  subdomain              String?    @unique
+  subdomain              String?       @unique
   headline               String?
-  bio                    String?    @db.Text
+  bio                    String?       @db.Text
   stripeConnectAccountId String?
   campaigns              Campaign[]
   sessions               Session[]
   accounts               Account[]
-  createdAt              DateTime   @default(now())
-  updatedAt              DateTime   @updatedAt
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+  devtoolsuser           DevtoolsUser?
+  memberships            CommunityMembership[]
+  communityComments      CommunityComment[]
 }
 
 model Session {
@@ -105,6 +108,7 @@ model Campaign {
   sponsors         SponsorSlot[]
   collaborations   CollaborationLoop[]
   paywalls         MilestonePaywall[]
+  subcommunity     Subcommunity?
   createdAt        DateTime            @default(now())
   updatedAt        DateTime            @updatedAt
 
@@ -431,4 +435,83 @@ model WaitlistEntry {
 
   @@index([status, createdAt], map: "waitlist_status_created_at_idx")
   @@map("waitlist")
+}
+
+model DevtoolsUser {
+  id          String   @id
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  templateKey String
+  label       String
+  email       String
+  createdAt   DateTime
+  updatedAt   DateTime
+
+  @@unique([userId])
+  @@unique([email])
+  @@map("devtoolsUser")
+}
+
+enum RescueRole {
+  backer
+  maker
+}
+
+model RescueOptIn {
+  id        String     @id @default(cuid())
+  name      String
+  email     String
+  role      RescueRole
+  project   String?
+  message   String?    @db.Text
+  createdAt DateTime   @default(now()) @map("created_at")
+
+  @@index([email])
+  @@map("rescue_opt_in")
+}
+
+model Community {
+  id             String         @id @default(cuid())
+  slug           String         @unique
+  name           String
+  description    String         @db.Text
+  createdAt      DateTime       @default(now())
+  subcommunities Subcommunity[]
+}
+
+model Subcommunity {
+  id          String                @id @default(cuid())
+  communityId String
+  community   Community             @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  campaignId  String                @unique
+  campaign    Campaign              @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  createdAt   DateTime              @default(now())
+  members     CommunityMembership[]
+  comments    CommunityComment[]
+
+  @@index([communityId])
+}
+
+model CommunityMembership {
+  id             String       @id @default(cuid())
+  subcommunityId String
+  subcommunity   Subcommunity @relation(fields: [subcommunityId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+
+  @@unique([subcommunityId, userId])
+  @@index([userId])
+}
+
+model CommunityComment {
+  id             String       @id @default(cuid())
+  subcommunityId String
+  subcommunity   Subcommunity @relation(fields: [subcommunityId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  body           String       @db.Text
+  createdAt      DateTime     @default(now())
+
+  @@index([subcommunityId, createdAt])
 }

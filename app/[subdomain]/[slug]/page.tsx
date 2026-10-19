@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import CampaignLanding from "@/components/campaign-landing";
 import { getCampaignLanding } from "@/lib/campaigns";
+import { getProjectRoom } from "@/lib/community";
+import { getSessionUserId } from "@/lib/current-user";
 
 export const dynamic = "force-dynamic";
 
@@ -28,5 +30,11 @@ export default async function CampaignPage(props: PageProps) {
 
   if (!campaign) notFound();
 
-  return <CampaignLanding campaign={campaign} />;
+  const userId = await getSessionUserId();
+  const community = await getProjectRoom(params.subdomain, params.slug, userId).catch((error) => {
+    console.error("CampaignPage: could not load project room", error);
+    return null;
+  });
+
+  return <CampaignLanding campaign={campaign} community={community} />;
 }

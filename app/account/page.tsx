@@ -1,15 +1,20 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import AccountAuthForm from "@/components/account-auth-form";
 import CreatorHome from "@/components/creator-home";
 import { betaWaitlistEnabled } from "@/lib/beta-gate";
 import { getSessionUser } from "@/lib/current-user";
 import { getStudioHome } from "@/lib/campaigns";
+import { safeInternalPath } from "@/lib/hosts";
 import { isPlatformAdmin } from "@/lib/platform-admin";
 
 export const dynamic = "force-dynamic";
 
-export default async function AccountPage() {
+export default async function AccountPage(props: { searchParams: Promise<{ next?: string }> }) {
+  const searchParams = await props.searchParams;
+  const redirectTo = safeInternalPath(searchParams.next);
   const user = await getSessionUser();
+  if (user && redirectTo) redirect(redirectTo);
   const creator = user ? await getStudioHome(user.id).catch(() => null) : null;
 
   const waitlistOnly = betaWaitlistEnabled();
@@ -36,7 +41,11 @@ export default async function AccountPage() {
               .
             </p>
           )}
-          <AccountAuthForm allowSignUp={!waitlistOnly} />
+          <AccountAuthForm
+            allowSignUp={!waitlistOnly}
+            redirectTo={redirectTo}
+            initialMode={redirectTo ? "sign-in" : "sign-up"}
+          />
         </div>
       </main>
     );

@@ -252,15 +252,6 @@ export default async function WaitlistLanding() {
         </div>
       </section>
 
-      <footer className="border-t border-slate-900 px-6 py-16 text-sm text-slate-500">
-        <p className="mx-auto max-w-6xl leading-relaxed">
-          CrowdVenture facilitates micro-patronage and reward-based project backing. Contributions made on this
-          platform are fees for access, digital perks, early software versions, or creator sponsorship. CrowdVenture
-          is not an equity crowdfunding portal, broker-dealer, or registered investment advisor. Backing a creator
-          does not confer equity, ownership, voting rights, or monetary return. Contributions are non-charitable and
-          not tax-deductible.
-        </p>
-      </footer>
     </div>
   );
 }

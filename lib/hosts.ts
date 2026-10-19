@@ -41,6 +41,13 @@ export function creatorUrl(host: string, subdomain: string, path = ""): string {
   return `${protocol}://${subdomain}.${root}${portSuffix}${path}`;
 }
 
+export function safeInternalPath(value: string | undefined) {
+  if (!value) return undefined;
+  if (!value.startsWith("/") || value.startsWith("//") || value.startsWith("/\\")) return undefined;
+  if (value.includes("://") || value.includes("\\")) return undefined;
+  return value;
+}
+
 export function isSameOriginRequest(request: Request): boolean {
   const fetchSite = request.headers.get("sec-fetch-site");
   if (fetchSite && fetchSite !== "same-origin") return false;
