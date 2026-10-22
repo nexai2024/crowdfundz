@@ -1,6 +1,7 @@
 import { Prisma, type RescueRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { consumeRateLimit } from "@/lib/waitlist-rate-limit";
+import { sendTransactionalEmail } from "@/lib/mail";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -55,7 +56,7 @@ export async function createRescueOptIn(body: {
     throw new RescueError("Consent is required to request a rescue review.", 400);
   }
 
-  await prisma.rescueOptIn.create({
+  const created = await prisma.rescueOptIn.create({
     data: {
       name,
       email,
@@ -64,6 +65,48 @@ export async function createRescueOptIn(body: {
       message: message || null,
     },
   });
+
+  if (role === "backer") {
+    // Look up held pledges for this email
+    const heldAllocations = await prisma.pledgeAllocation.findMany({
+      where: {
+        backer: { email: { equals: email, mode: "insensitive" } },
+        status: "HELD",
+      },
+      include: {
+        phase: { select: { title: true, pullRequestMergedAt: true } },
+        backer: { include: { campaign: { select: { title: true, slug: true } } } },
+      },
+    });
+
+    if (heldAllocations.length > 0) {
+      const adminEmails = process.env.PLATFORM_ADMIN_EMAILS?.split(",").map((e) => e.trim()) || [];
+      if (adminEmails.length > 0) {
+        let details = `Rescue request from ${name} (${email})
+Project mentioned: ${project}
+Message: ${message || "None"}
+
+Held Pledges:
+`;
+
+        for (const alloc of heldAllocations) {
+          const merged = alloc.phase.pullRequestMergedAt ? "Yes" : "No";
+          details += `- $${alloc.amountUsd} on campaign '${alloc.backer.campaign.title}' (Phase: ${alloc.phase.title}) [PR Merged: ${merged}]
+`;
+        }
+
+        try {
+          await sendTransactionalEmail({
+            to: adminEmails[0],
+            subject: `New Rescue Request: ${name}`,
+            text: details,
+          });
+        } catch (e) {
+          console.error("Could not send rescue notification to operator", e);
+        }
+      }
+    }
+  }
 
   return { status: "received" as const };
 }

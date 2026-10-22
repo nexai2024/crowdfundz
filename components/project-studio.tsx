@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowUpRight, Zap } from "lucide-react";
+import { ArrowUpRight, Zap, Trash2 } from "lucide-react";
 import type { StudioProject, StudioTask } from "@/lib/studio";
 
 const inputClass =
@@ -236,11 +236,11 @@ function PlanSection({ project }: { project: StudioProject }) {
   const unassigned = project.tasks.filter((task) => !task.phaseId);
   return (
     <Section id="plan" title="Milestones and tasks" hint="Milestones publish as the public plan. A backer can hold a pledge against them. Funds move after you record a merged pull request and that backer signs off. Tasks stay in the studio.">
-      {project.milestones.length === 0 && unassigned.length === 0 && (
+      {project.phases.length === 0 && unassigned.length === 0 && (
         <p className="text-sm text-slate-400">Define the first milestone, then attach the work that gets it done.</p>
       )}
       <div className="space-y-4">
-        {project.milestones.map((milestone) => (
+        {project.phases.map((milestone) => (
           <div key={milestone.id} className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -327,7 +327,7 @@ function PlanSection({ project }: { project: StudioProject }) {
           <Field label="Milestone">
             <select name="phaseId" className={inputClass} defaultValue="">
               <option value="">Unassigned</option>
-              {project.milestones.map((milestone) => (
+              {project.phases.map((milestone) => (
                 <option key={milestone.id} value={milestone.id}>
                   {milestone.label} · {milestone.title}
                 </option>
@@ -459,7 +459,7 @@ function MilestoneRelease({
   milestone,
 }: {
   projectSlug: string;
-  milestone: StudioProject["milestones"][number];
+  milestone: StudioProject["phases"][number];
 }) {
   const save = useStudioSave();
   return (
@@ -652,33 +652,113 @@ function SandboxPublisher({ project }: { project: StudioProject }) {
   );
 }
 
+function UpdatePublisher({ project }: { project: StudioProject }) {
+  const save = useStudioSave();
+  return (
+    <PublishCard title="Maker Update">
+      <div className="space-y-4">
+        {project.makerUpdates?.map((update) => (
+          <div key={update.id} className="border border-slate-800 rounded-lg p-3 relative">
+            <div className="text-sm font-bold text-slate-200">{update.title}</div>
+            <p className="text-xs text-slate-400 mt-1 whitespace-pre-wrap">{update.content}</p>
+          </div>
+        ))}
+        {(!project.makerUpdates || project.makerUpdates.length === 0) && <p className="text-xs text-slate-500">No updates published.</p>}
+      </div>
+      <form
+        className="mt-3 grid gap-2"
+        onSubmit={async (event) => {
+          event.preventDefault();
+          const form = event.currentTarget;
+          const formData = new FormData(form);
+          const res = await fetch("/api/studio/updates", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              campaignId: project.id,
+              title: formData.get("title"),
+              content: formData.get("content"),
+            })
+          });
+          if (res.ok) {
+            window.location.reload();
+          }
+        }}
+      >
+        <input name="title" required placeholder="Update title" className={inputClass} />
+        <textarea name="content" required rows={4} placeholder="Write your update here..." className={inputClass} />
+        <button type="submit" className="w-full py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-lg font-bold text-xs uppercase transition">
+          Publish and Email Update
+        </button>
+      </form>
+    </PublishCard>
+  );
+}
+
 function BountyPublisher({ project }: { project: StudioProject }) {
   const save = useStudioSave();
   return (
     <PublishCard title="Bounty">
-      <RecordList
-        empty="No bounties published."
-        rows={project.bounties.map((bounty) => ({
-          id: bounty.id,
-          title: `${bounty.title} · $${bounty.rewardUsd}`,
-          detail: bounty.description,
-        }))}
-        onRemove={(id) => void save.run({ action: "deleteBounty", slug: project.slug, id })}
-      />
+      <div className="space-y-4">
+        {project.bounties.map((bounty) => (
+          <div key={bounty.id} className="border border-slate-800 rounded-lg p-3 relative">
+            <button
+              type="button"
+              className="absolute top-3 right-3 text-slate-500 hover:text-rose-400 transition"
+              onClick={() => void save.run({ action: "deleteBounty", slug: project.slug, id: bounty.id })}
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+            <div className="text-sm font-bold text-slate-200">
+              {bounty.title} <span className="text-emerald-400 font-mono text-xs ml-2">${bounty.rewardUsd}</span>
+            </div>
+            <p className="text-xs text-slate-400 mt-1">{bounty.description}</p>
+            {bounty.submissions && bounty.submissions.length > 0 && (
+              <div className="mt-3 space-y-2">
+                <h4 className="text-[10px] font-mono uppercase text-slate-500">Submissions</h4>
+                {bounty.submissions.map((sub: { id: string; contributorName: string; contributorEmail: string; submissionUrl: string; status: string }) => (
+                  <div key={sub.id} className="text-xs bg-slate-950 p-2 rounded border border-slate-800 flex items-center justify-between">
+                    <div>
+                      <div className="font-mono text-slate-300">{sub.contributorName} ({sub.contributorEmail})</div>
+                      <a href={sub.submissionUrl} target="_blank" rel="noreferrer" className="text-emerald-400 hover:underline">{sub.submissionUrl}</a>
+                    </div>
+                    {sub.status === "PENDING" ? (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => void save.run({ action: "reviewBountySubmission", slug: project.slug, submissionId: sub.id, action_type: "approve" })}
+                          className="px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded hover:bg-emerald-500/30 transition"
+                        >Approve</button>
+                        <button
+                          onClick={() => void save.run({ action: "reviewBountySubmission", slug: project.slug, submissionId: sub.id, action_type: "reject" })}
+                          className="px-2 py-1 bg-rose-500/20 text-rose-400 rounded hover:bg-rose-500/30 transition"
+                        >Reject</button>
+                      </div>
+                    ) : (
+                      <span className={`px-2 py-0.5 rounded text-[10px] ${sub.status === "APPROVED" ? "bg-emerald-500/20 text-emerald-400" : "bg-rose-500/20 text-rose-400"}`}>{sub.status}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+        {project.bounties.length === 0 && <p className="text-xs text-slate-500">No bounties published.</p>}
+      </div>
       <form
         className="mt-3 grid gap-2"
         onSubmit={(event) => {
           event.preventDefault();
-          const form = new FormData(event.currentTarget);
-          void save.run(
+          const form = event.currentTarget;
+          const formData = new FormData(form);
+          save.run(
             {
               action: "addBounty",
               slug: project.slug,
-              title: form.get("title"),
-              description: form.get("description"),
-              rewardUsd: form.get("rewardUsd"),
+              title: formData.get("title"),
+              description: formData.get("description"),
+              rewardUsd: formData.get("rewardUsd"),
             },
-            event.currentTarget
+            form
           );
         }}
       >

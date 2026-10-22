@@ -5,6 +5,7 @@ import { getSessionUser } from "@/lib/current-user";
 import { assertCampaignOwner } from "@/lib/studio";
 import { sameOriginOrForbid } from "@/lib/http";
 import { consumeRateLimit, requestIp } from "@/lib/waitlist-rate-limit";
+import { cookies } from "next/headers";
 
 export async function GET(req: Request) {
   const campaignId = new URL(req.url).searchParams.get("campaignId");
@@ -45,7 +46,9 @@ export async function POST(req: Request) {
       optionIndex?: number;
     };
     const user = await getSessionUser();
-    const email = user?.email?.trim().toLowerCase() || "";
+    const cookieStore = await cookies();
+    const cookieEmail = cookieStore.get("backer_email")?.value;
+    const email = user?.email?.trim().toLowerCase() || cookieEmail?.trim().toLowerCase() || "";
     const claimed = body.backerEmail?.trim().toLowerCase() || "";
     const optionIndex = body.optionIndex;
 

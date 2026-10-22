@@ -381,16 +381,32 @@ export default function CampaignLanding({
                   </ul>
                 </div>
 
-                <button
-                  onClick={() => setSelectedTier(tier)}
-                  className={`w-full py-2.5 rounded-xl text-xs font-bold font-mono uppercase tracking-wider transition ${
-                    tier.featured
-                      ? "bg-emerald-500 hover:bg-emerald-400 text-slate-950"
-                      : "bg-slate-800 hover:bg-slate-700 text-white"
-                  }`}
-                >
-                  Pledge ${tier.priceUsd}
-                </button>
+                                {tier.limit !== null && tier.backerCount >= tier.limit ? (
+                  <button
+                    disabled
+                    className="w-full py-2.5 rounded-xl text-xs font-bold font-mono uppercase tracking-wider bg-slate-800 text-slate-500 cursor-not-allowed opacity-50"
+                  >
+                    Sold Out
+                  </button>
+                ) : campaign.daysRemaining === 0 ? (
+                  <button
+                    disabled
+                    className="w-full py-2.5 rounded-xl text-xs font-bold font-mono uppercase tracking-wider bg-slate-800 text-slate-500 cursor-not-allowed opacity-50"
+                  >
+                    Ended
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setSelectedTier(tier)}
+                    className={`w-full py-2.5 rounded-xl text-xs font-bold font-mono uppercase tracking-wider transition ${
+                      tier.featured
+                        ? "bg-emerald-500 hover:bg-emerald-400 text-slate-950"
+                        : "bg-slate-800 hover:bg-slate-700 text-white"
+                    }`}
+                  >
+                    Pledge ${tier.priceUsd}
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -447,6 +463,32 @@ export default function CampaignLanding({
           )}
         </div>
       </section>
+
+      {campaign.makerUpdates && campaign.makerUpdates.length > 0 && (
+        <section className="px-6 py-16 border-t border-slate-900 bg-slate-950/40">
+          <div className="max-w-3xl mx-auto text-left">
+            <span className="text-xs font-mono text-emerald-400 uppercase tracking-wider">
+              Latest from the maker
+            </span>
+            <h2 className="text-2xl font-bold text-white mt-2 mb-8">Updates</h2>
+            <div className="space-y-6">
+              {campaign.makerUpdates.map((update) => (
+                <div key={update.id} className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800">
+                  <div className="flex justify-between items-baseline mb-4">
+                    <h3 className="text-lg font-bold text-white">{update.title}</h3>
+                    <span className="text-xs font-mono text-slate-500">
+                      {new Date(update.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">
+                    {update.content}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {campaign.faqs.length > 0 && (
         <section className="px-6 py-20 max-w-3xl mx-auto">

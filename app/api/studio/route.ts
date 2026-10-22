@@ -67,6 +67,8 @@ export async function POST(request: Request) {
         return await addBounty(campaign.id, body);
       case "deleteBounty":
         return await deleteOwned(campaign.id, body, "bounty");
+      case "reviewBountySubmission":
+        return await reviewBountySubmission(campaign.id, body);
       case "addSponsor":
         return await addSponsor(campaign.id, body);
       case "deleteSponsor":
@@ -269,6 +271,41 @@ async function addSandbox(campaignId: string, body: Record<string, unknown>) {
     data: { campaignId, title, sandboxUrl, environment, status: "RUNNING" },
   });
   return NextResponse.json({ ok: true }, { status: 201 });
+}
+
+
+async function reviewBountySubmission(campaignId: string, body: Record<string, unknown>) {
+  if (typeof body.submissionId !== "string" || typeof body.action_type !== "string") {
+    return NextResponse.json({ error: "Missing submission ID or action" }, { status: 400 });
+  }
+
+  const status = body.action_type === "approve" ? "APPROVED" : body.action_type === "reject" ? "REJECTED" : null;
+  if (!status) {
+    return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+  }
+
+  const submission = await prisma.bountySubmission.findUnique({
+    where: { id: body.submissionId },
+    include: { bounty: true },
+  });
+
+  if (!submission || submission.bounty.campaignId !== campaignId) {
+    return NextResponse.json({ error: "Submission not found" }, { status: 404 });
+  }
+
+  await prisma.bountySubmission.update({
+    where: { id: submission.id },
+    data: { status },
+  });
+
+  if (status === "APPROVED") {
+    await prisma.bounty.update({
+      where: { id: submission.bountyId },
+      data: { status: "CLOSED" },
+    });
+  }
+
+  return NextResponse.json({ ok: true });
 }
 
 async function addBounty(campaignId: string, body: Record<string, unknown>) {
