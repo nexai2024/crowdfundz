@@ -67,6 +67,7 @@ export const auth = betterAuth({
     },
   },
   plugins: [
-    dash(), devtools({enabled: true})
+    dash(),
+    ...(process.env.NODE_ENV === "production" ? [] : [devtools({ enabled: true })]),
   ],
 });

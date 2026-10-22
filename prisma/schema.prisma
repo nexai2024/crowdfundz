@@ -504,6 +504,15 @@ model CommunityMembership {
   @@index([userId])
 }
 
+model RateLimitBucket {
+  id      String   @id
+  hits    Int
+  resetAt DateTime
+
+  @@index([resetAt])
+  @@map("rate_limit_bucket")
+}
+
 model CommunityComment {
   id             String       @id @default(cuid())
   subcommunityId String

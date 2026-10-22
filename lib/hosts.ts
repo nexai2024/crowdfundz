@@ -48,6 +48,10 @@ export function safeInternalPath(value: string | undefined) {
   return value;
 }
 
+function isLocalHost(hostname: string) {
+  return hostname === "localhost" || hostname.endsWith(".localhost") || hostname === "127.0.0.1";
+}
+
 export function isSameOriginRequest(request: Request): boolean {
   const fetchSite = request.headers.get("sec-fetch-site");
   if (fetchSite && fetchSite !== "same-origin") return false;
@@ -60,11 +64,20 @@ export function isSameOriginRequest(request: Request): boolean {
 
   try {
     const url = new URL(origin);
-    const host = forwarded.split(",")[0]?.trim() ?? "";
+    const host = forwarded.split(",")[0]?.trim().toLowerCase() ?? "";
     const [hostname, port] = host.split(":");
     if (url.hostname !== hostname) return false;
+    const local = isLocalHost(hostname);
+    const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+    const requestProtocol =
+      forwardedProto === "http" || forwardedProto === "https"
+        ? `${forwardedProto}:`
+        : local
+          ? "http:"
+          : "https:";
+    if (url.protocol !== requestProtocol) return false;
     const originPort = url.port || (url.protocol === "https:" ? "443" : "80");
-    const requestPort = port || (url.protocol === "https:" ? "443" : "80");
+    const requestPort = port || (requestProtocol === "https:" ? "443" : "80");
     return originPort === requestPort;
   } catch {
     return false;
@@ -74,9 +87,10 @@ export function isSameOriginRequest(request: Request): boolean {
 export function isAllowedAppOrigin(origin: string): boolean {
   try {
     const url = new URL(origin);
-    if (url.protocol !== "http:" && url.protocol !== "https:") return false;
     const hostname = url.hostname;
-    if (hostname === "localhost" || hostname.endsWith(".localhost")) return true;
+    const local = isLocalHost(hostname);
+    if (local) return url.protocol === "http:" || url.protocol === "https:";
+    if (url.protocol !== "https:") return false;
     return APEX_DOMAINS.some(
       (domain) => hostname === domain || hostname.endsWith(`.${domain}`)
     );

@@ -1,9 +1,13 @@
 import type { Metadata, Viewport } from "next";
+import dynamic from "next/dynamic";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import type { ReactNode } from "react";
 import SiteFooter from "@/components/site-footer";
-import { Devtools } from "./devtools";
+
+const Devtools =
+  process.env.NODE_ENV === "production"
+    ? null
+    : dynamic(() => import("./devtools").then((mod) => mod.Devtools));
 
 const inter = Inter({
   subsets: ["latin"],
@@ -43,7 +47,7 @@ export default function RootLayout({
       <body className="flex min-h-screen flex-col bg-slate-950 font-sans text-slate-100 antialiased selection:bg-emerald-500 selection:text-slate-950">
         <div className="flex-1">{children}</div>
         <SiteFooter />
-        <Devtools />
+        {Devtools ? <Devtools /> : null}
       </body>
     </html>
   );

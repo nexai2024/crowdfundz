@@ -1,13 +1,11 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { isReservedSubdomain } from "@/lib/subdomain";
+import { consumeRateLimit } from "@/lib/waitlist-rate-limit";
 
 export const MAIN_COMMUNITY_SLUG = "crowdventure";
 
 const COMMENT_LIMIT = 100;
-const WINDOW_MS = 10 * 60 * 1000;
-const LIMIT = 20;
-const hits = new Map<string, number[]>();
 
 export class CommunityError extends Error {
   status: number;
@@ -62,15 +60,7 @@ export type CommunityHub = {
 };
 
 export function allowCommunityAttempt(ip: string) {
-  const now = Date.now();
-  const recent = (hits.get(ip) ?? []).filter((time) => now - time < WINDOW_MS);
-  if (recent.length >= LIMIT) {
-    hits.set(ip, recent);
-    return false;
-  }
-  recent.push(now);
-  hits.set(ip, recent);
-  return true;
+  return consumeRateLimit("community", ip, 20, 10 * 60 * 1000);
 }
 
 export async function ensureMainCommunity() {

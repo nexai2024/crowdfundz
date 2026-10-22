@@ -1,10 +1,8 @@
 import { Prisma, type RescueRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { consumeRateLimit } from "@/lib/waitlist-rate-limit";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const WINDOW_MS = 10 * 60 * 1000;
-const LIMIT = 5;
-const hits = new Map<string, number[]>();
 
 export class RescueError extends Error {
   status: number;
@@ -16,15 +14,7 @@ export class RescueError extends Error {
 }
 
 export function allowRescueAttempt(ip: string) {
-  const now = Date.now();
-  const recent = (hits.get(ip) ?? []).filter((time) => now - time < WINDOW_MS);
-  if (recent.length >= LIMIT) {
-    hits.set(ip, recent);
-    return false;
-  }
-  recent.push(now);
-  hits.set(ip, recent);
-  return true;
+  return consumeRateLimit("rescue", ip, 5, 10 * 60 * 1000);
 }
 
 export async function createRescueOptIn(body: {

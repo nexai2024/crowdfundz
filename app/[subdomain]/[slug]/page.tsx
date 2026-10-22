@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import CampaignLanding from "@/components/campaign-landing";
 import { getCampaignLanding } from "@/lib/campaigns";
 import { getProjectRoom } from "@/lib/community";
-import { getSessionUserId } from "@/lib/current-user";
+import { getSessionUser } from "@/lib/current-user";
 
 export const dynamic = "force-dynamic";
 
@@ -23,18 +23,23 @@ export async function generateMetadata(props: PageProps): Promise<Metadata> {
 
 export default async function CampaignPage(props: PageProps) {
   const params = await props.params;
-  const campaign = await getCampaignLanding(params.subdomain, params.slug).catch((error) => {
-    console.error("CampaignPage: could not load project", error);
-    return null;
-  });
+  const [campaign, user] = await Promise.all([
+    getCampaignLanding(params.subdomain, params.slug).catch((error) => {
+      console.error("CampaignPage: could not load project", error);
+      return null;
+    }),
+    getSessionUser().catch((error) => {
+      console.error("CampaignPage: could not read the signed-in user", error);
+      return null;
+    }),
+  ]);
 
   if (!campaign) notFound();
 
-  const userId = await getSessionUserId();
-  const community = await getProjectRoom(params.subdomain, params.slug, userId).catch((error) => {
+  const community = await getProjectRoom(params.subdomain, params.slug, user?.id ?? null).catch((error) => {
     console.error("CampaignPage: could not load project room", error);
     return null;
   });
 
-  return <CampaignLanding campaign={campaign} community={community} />;
+  return <CampaignLanding campaign={campaign} community={community} voterEmail={user?.email ?? ""} />;
 }

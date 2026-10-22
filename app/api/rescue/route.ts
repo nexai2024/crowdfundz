@@ -7,7 +7,7 @@ export async function POST(request: Request) {
   const origin = sameOriginOrForbid(request);
   if (origin) return origin;
 
-  if (!allowRescueAttempt(requestIp(request))) {
+  if (!(await allowRescueAttempt(requestIp(request)))) {
     return NextResponse.json(
       { error: "Too many attempts from this network. Try again in a few minutes." },
       { status: 429 }

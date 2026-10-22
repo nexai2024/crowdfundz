@@ -28,9 +28,11 @@ import MilestonePaywall from "@/components/milestone-paywall";
 export default function CampaignLanding({
   campaign,
   community,
+  voterEmail = "",
 }: {
   campaign: CampaignLandingData;
   community?: ProjectRoom | null;
+  voterEmail?: string;
 }) {
   const [selectedTier, setSelectedTier] = useState<CampaignTierView | null>(null);
   const [activePhaseIndex, setActivePhaseIndex] = useState(0);
@@ -251,7 +253,9 @@ export default function CampaignLanding({
           )}
           {ideUpdates.length > 0 && <IdeIntegration initialUpdates={ideUpdates} />}
           {sandboxes.length > 0 && <DemoSandbox sandboxes={sandboxes} />}
-          {polls.length > 0 && <TokenizedGovernance campaignId={campaign.id} polls={polls} />}
+          {polls.length > 0 && (
+            <TokenizedGovernance campaignId={campaign.id} polls={polls} voterEmail={voterEmail} />
+          )}
           {paywalls.length > 0 && (
             <MilestonePaywall totalRaised={totalRaised} paywalls={paywalls} />
           )}

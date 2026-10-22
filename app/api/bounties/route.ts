@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ownerMutation } from "@/lib/http";
+import { requiredText, wholeDollars } from "@/lib/studio";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -25,22 +26,32 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { campaignId, title, description, rewardUsd } = body;
+    const body = (await req.json()) as {
+      campaignId?: string;
+      title?: string;
+      description?: string;
+      rewardUsd?: number;
+    };
+    const title = requiredText(body.title, 140);
+    const description = requiredText(body.description, 2000);
+    const rewardUsd = wholeDollars(body.rewardUsd);
 
-    if (!campaignId || !title || !description || !rewardUsd) {
-      return NextResponse.json({ error: "Missing required bounty fields" }, { status: 400 });
+    if (!body.campaignId || !title || !description || rewardUsd === null) {
+      return NextResponse.json(
+        { error: "A bounty needs a title, description, and whole-dollar reward" },
+        { status: 400 }
+      );
     }
 
-    const owner = await ownerMutation(req, campaignId);
+    const owner = await ownerMutation(req, body.campaignId);
     if (owner) return owner;
 
     const bounty = await prisma.bounty.create({
       data: {
-        campaignId,
+        campaignId: body.campaignId,
         title,
         description,
-        rewardUsd: Number(rewardUsd),
+        rewardUsd,
         status: "OPEN",
       },
     });

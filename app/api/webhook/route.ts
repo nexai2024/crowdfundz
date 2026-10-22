@@ -21,8 +21,8 @@ export async function POST(req: Request) {
   try {
     event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Invalid signature";
-    return NextResponse.json({ error: `Webhook Error: ${message}` }, { status: 400 });
+    console.error("Webhook signature failed", error instanceof Error ? error.message : error);
+    return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
   if (event.type === "checkout.session.completed") {
@@ -67,23 +67,31 @@ async function revokePledge(intentId: string | null, status: "REFUNDED" | "DISPU
   const backer = await prisma.backer.findUnique({ where: { stripePaymentIntentId: intentId } });
   if (!backer || backer.status === status || backer.status === "REFUNDED") return;
 
-  const wasCounted = backer.status === "SUCCEEDED";
-  await prisma.backer.update({
-    where: { id: backer.id },
+  const counted = await prisma.backer.updateMany({
+    where: { id: backer.id, status: "SUCCEEDED" },
     data: { status, entitledAt: null },
   });
+  const changed =
+    counted.count === 1 ||
+    (
+      await prisma.backer.updateMany({
+        where: { id: backer.id, status: { notIn: [status, "REFUNDED", "SUCCEEDED"] } },
+        data: { status, entitledAt: null },
+      })
+    ).count === 1;
+  if (!changed) return;
+
   await prisma.pledgeAllocation.updateMany({
     where: { backerId: backer.id, status: { in: ["PENDING", "HELD", "RELEASING"] } },
     data: { status: status === "DISPUTED" ? "DISPUTED" : "REFUNDED" },
   });
-  if (wasCounted) {
-    await prisma.campaign.update({
-      where: { id: backer.campaignId },
-      data: {
-        totalRaised: { decrement: backer.amountUsd },
-        backerCount: { decrement: 1 },
-      },
-    });
+  if (counted.count === 1) {
+    await prisma.$executeRaw`
+      UPDATE "Campaign"
+      SET "totalRaised" = GREATEST(0, "totalRaised" - ${backer.amountUsd}),
+          "backerCount" = GREATEST(0, "backerCount" - 1)
+      WHERE "id" = ${backer.campaignId}
+    `;
   }
 }
 
@@ -92,10 +100,12 @@ async function restorePledge(intentId: string | null) {
   const backer = await prisma.backer.findUnique({ where: { stripePaymentIntentId: intentId } });
   if (!backer || backer.status !== "DISPUTED") return;
 
-  await prisma.backer.update({
-    where: { id: backer.id },
+  const restored = await prisma.backer.updateMany({
+    where: { id: backer.id, status: "DISPUTED" },
     data: { status: "SUCCEEDED", entitledAt: new Date() },
   });
+  if (restored.count !== 1) return;
+
   await prisma.pledgeAllocation.updateMany({
     where: { backerId: backer.id, status: "DISPUTED" },
     data: { status: "HELD" },

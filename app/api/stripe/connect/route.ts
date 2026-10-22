@@ -82,8 +82,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ url: link.url });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Could not start payout setup";
-    console.error("Stripe Connect onboarding failed:", message);
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error(
+      "Stripe Connect onboarding failed:",
+      error instanceof Error ? error.message : error
+    );
+    return NextResponse.json({ error: "Could not start payout setup." }, { status: 500 });
   }
 }

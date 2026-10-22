@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ownerMutation } from "@/lib/http";
+import { optionalHttpUrl, requiredText, wholeDollars } from "@/lib/studio";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -25,24 +26,46 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { campaignId, sponsorName, logoUrl, websiteUrl, tierName, amountPaidUsd } = body;
+    const body = (await req.json()) as {
+      campaignId?: string;
+      sponsorName?: string;
+      logoUrl?: string;
+      websiteUrl?: string;
+      tierName?: string;
+      amountPaidUsd?: number;
+    };
+    const sponsorName = requiredText(body.sponsorName, 80);
+    const logoUrl = optionalHttpUrl(body.logoUrl);
+    const websiteUrl = optionalHttpUrl(body.websiteUrl);
+    const tierName = requiredText(body.tierName, 40) ?? "Gold Sponsor";
+    const amountPaidUsd = wholeDollars(body.amountPaidUsd ?? 250);
 
-    if (!campaignId || !sponsorName || !logoUrl || !websiteUrl) {
-      return NextResponse.json({ error: "Missing required sponsor details" }, { status: 400 });
+    if (
+      !body.campaignId ||
+      !sponsorName ||
+      !logoUrl ||
+      logoUrl === "invalid" ||
+      !websiteUrl ||
+      websiteUrl === "invalid" ||
+      amountPaidUsd === null
+    ) {
+      return NextResponse.json(
+        { error: "A sponsor needs a name, http or https logo and website, and a whole-dollar amount" },
+        { status: 400 }
+      );
     }
 
-    const owner = await ownerMutation(req, campaignId);
+    const owner = await ownerMutation(req, body.campaignId);
     if (owner) return owner;
 
     const sponsor = await prisma.sponsorSlot.create({
       data: {
-        campaignId,
+        campaignId: body.campaignId,
         sponsorName,
         logoUrl,
         websiteUrl,
-        tierName: tierName || "Gold Sponsor",
-        amountPaidUsd: Number(amountPaidUsd || 250),
+        tierName,
+        amountPaidUsd,
         active: true,
       },
     });

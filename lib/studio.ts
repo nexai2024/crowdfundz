@@ -197,10 +197,18 @@ export function optionalHttpUrl(value: unknown): string | null | "invalid" {
   try {
     const url = new URL(value.trim());
     if (url.protocol !== "http:" && url.protocol !== "https:") return "invalid";
+    if (url.username || url.password) return "invalid";
     return url.toString();
   } catch {
     return "invalid";
   }
+}
+
+/** An http(s) URL safe to put in an href. Anything else becomes null. */
+export function publicHttpUrl(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const parsed = optionalHttpUrl(value);
+  return parsed === "invalid" || parsed === null ? null : parsed;
 }
 
 export function requiredText(value: unknown, max: number): string | null {

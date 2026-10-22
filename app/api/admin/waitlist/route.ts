@@ -33,7 +33,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
     }
     console.error("Waitlist admin action failed", error);
-    const message = error instanceof Error ? error.message : "Could not update that entry.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: "Could not update that entry." }, { status: 500 });
   }
 }

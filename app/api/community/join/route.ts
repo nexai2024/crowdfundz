@@ -14,7 +14,7 @@ async function readBody(request: Request) {
 async function authorize(request: Request): Promise<{ response: Response } | { userId: string }> {
   const origin = sameOriginOrForbid(request);
   if (origin) return { response: origin };
-  if (!allowCommunityAttempt(requestIp(request))) {
+  if (!(await allowCommunityAttempt(requestIp(request)))) {
     return {
       response: NextResponse.json(
         { error: "Too many attempts from this network. Try again in a few minutes." },

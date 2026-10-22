@@ -45,10 +45,10 @@ proxy.on('error', (err, req, res) => {
   }
 });
 
-proxy.on('proxyReq', (proxyReq, req, res, options) => {
+proxy.on('proxyReq', (proxyReq) => {
   console.log(`Proxy: Forwarding request to: ${proxyReq.path}`);
 });
 
-proxy.on('proxyRes', (proxyRes, req, res) => {
+proxy.on('proxyRes', (proxyRes) => {
   console.log(`Proxy: Received response with status: ${proxyRes.statusCode}`);
 });

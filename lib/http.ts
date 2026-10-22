@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import { isSameOriginRequest } from "@/lib/hosts";
 import { assertCampaignOwner } from "@/lib/studio";
 
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export function isEmailAddress(value: string) {
+  return value.length <= 200 && EMAIL.test(value);
+}
+
 export function sameOriginOrForbid(request: Request) {
   if (isSameOriginRequest(request)) return null;
   return NextResponse.json({ error: "This action has to come from the app" }, { status: 403 });

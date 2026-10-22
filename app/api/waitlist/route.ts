@@ -12,7 +12,7 @@ export async function POST(request: Request) {
   const origin = sameOriginOrForbid(request);
   if (origin) return origin;
 
-  if (!allowWaitlistAttempt(requestIp(request))) {
+  if (!(await allowWaitlistAttempt(requestIp(request)))) {
     return NextResponse.json(
       { error: "Too many attempts from this network. Try again in a few minutes.", code: "rate_limited" },
       { status: 429 }
@@ -35,7 +35,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
     }
     console.error("Waitlist signup failed", error);
-    const message = error instanceof Error ? error.message : "Could not join the waitlist.";
-    return NextResponse.json({ error: message, code: "unavailable" }, { status: 503 });
+    return NextResponse.json({ error: "Could not join the waitlist.", code: "unavailable" }, { status: 503 });
   }
 }

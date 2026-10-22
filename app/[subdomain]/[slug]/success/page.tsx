@@ -10,6 +10,7 @@ import { PledgeRoomInvite } from "@/components/pledge-room-invite";
 import { getRoomInvite } from "@/lib/community";
 import { getSessionUserId } from "@/lib/current-user";
 import { confirmCheckoutSession } from "@/lib/pledges";
+import { publicHttpUrl } from "@/lib/studio";
 
 export const dynamic = "force-dynamic";
 
@@ -31,13 +32,19 @@ export default async function SuccessPage(props: PageProps) {
   const campaign = await prisma.campaign.findUnique({
     where: { creatorId_slug: { creatorId: creator.id, slug: params.slug } },
   });
-  if (!campaign) notFound();
+  if (!campaign || campaign.status === "DRAFT") notFound();
 
   if (searchParams.session_id) {
-    try {
-      await confirmCheckoutSession(searchParams.session_id);
-    } catch (error) {
-      console.error("Could not confirm checkout session", error instanceof Error ? error.message : error);
+    const candidate = await prisma.backer.findUnique({
+      where: { stripeSessionId: searchParams.session_id },
+      select: { campaignId: true },
+    });
+    if (candidate?.campaignId === campaign.id) {
+      try {
+        await confirmCheckoutSession(searchParams.session_id);
+      } catch (error) {
+        console.error("Could not confirm checkout session", error instanceof Error ? error.message : error);
+      }
     }
   }
 
@@ -151,13 +158,20 @@ export default async function SuccessPage(props: PageProps) {
           )}
           {paywalls.length > 0 && (
             <ul className="mt-4 space-y-2 text-xs">
-              {paywalls.map((paywall) => (
+              {paywalls.map((paywall) => {
+                const href = publicHttpUrl(paywall.contentUrl);
+                return (
                 <li key={paywall.id}>
-                  <a href={paywall.contentUrl} className="text-emerald-300 underline" target="_blank" rel="noreferrer">
-                    {paywall.title}
-                  </a>
+                  {href ? (
+                    <a href={href} className="text-emerald-300 underline" target="_blank" rel="noreferrer">
+                      {paywall.title}
+                    </a>
+                  ) : (
+                    <span>{paywall.title}</span>
+                  )}
                 </li>
-              ))}
+                );
+              })}
             </ul>
           )}
         </div>

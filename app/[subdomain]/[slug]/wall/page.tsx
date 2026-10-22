@@ -4,7 +4,6 @@ import { headers } from "next/headers";
 import { ArrowLeft, Heart, Users } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { platformFeeCents } from "@/lib/platform-fee";
-import { confirmOpenPledges } from "@/lib/pledges";
 import { isOnCreatorHost } from "@/lib/hosts";
 import { isReservedSubdomain } from "@/lib/subdomain";
 
@@ -23,13 +22,6 @@ export default async function BackerWallPage(props: PageProps) {
   });
   if (!creator) notFound();
 
-  const campaignRef = await prisma.campaign.findUnique({
-    where: { creatorId_slug: { creatorId: creator.id, slug: params.slug } },
-    select: { id: true },
-  });
-  if (!campaignRef) notFound();
-  await confirmOpenPledges([campaignRef.id]);
-
   const campaign = await prisma.campaign.findUnique({
     where: { creatorId_slug: { creatorId: creator.id, slug: params.slug } },
     include: {
@@ -40,7 +32,7 @@ export default async function BackerWallPage(props: PageProps) {
       },
     },
   });
-  if (!campaign) notFound();
+  if (!campaign || campaign.status === "DRAFT") notFound();
 
   const host = (await headers()).get("host") || "";
   const campaignHref = isOnCreatorHost(host, params.subdomain)

@@ -1,8 +1,10 @@
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getSessionUser } from "@/lib/current-user";
 import { assertCampaignOwner } from "@/lib/studio";
 import { sameOriginOrForbid } from "@/lib/http";
+import { consumeRateLimit, requestIp } from "@/lib/waitlist-rate-limit";
 
 export async function GET(req: Request) {
   const campaignId = new URL(req.url).searchParams.get("campaignId");
@@ -29,6 +31,12 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const origin = sameOriginOrForbid(req);
   if (origin) return origin;
+  if (!(await consumeRateLimit("governance", requestIp(req), 20, 10 * 60 * 1000))) {
+    return NextResponse.json(
+      { error: "Too many attempts from this network. Try again in a few minutes." },
+      { status: 429 }
+    );
+  }
 
   try {
     const body = (await req.json()) as {
@@ -36,12 +44,23 @@ export async function POST(req: Request) {
       backerEmail?: string;
       optionIndex?: number;
     };
-    const email = body.backerEmail?.trim().toLowerCase() || "";
+    const user = await getSessionUser();
+    const email = user?.email?.trim().toLowerCase() || "";
+    const claimed = body.backerEmail?.trim().toLowerCase() || "";
     const optionIndex = body.optionIndex;
 
-    if (!body.pollId || !email || optionIndex === undefined) {
+    if (!email) {
       return NextResponse.json(
-        { error: "pollId, backerEmail, and optionIndex are required" },
+        { error: "Sign in with the email on your pledge to vote." },
+        { status: 401 }
+      );
+    }
+    if (claimed && claimed !== email) {
+      return NextResponse.json({ error: "Vote with the email on your account." }, { status: 403 });
+    }
+    if (!body.pollId || optionIndex === undefined) {
+      return NextResponse.json(
+        { error: "pollId and optionIndex are required" },
         { status: 400 }
       );
     }

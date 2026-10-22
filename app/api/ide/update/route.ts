@@ -6,14 +6,22 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { campaignId, apiKey, commitMessage, editor, linesAdded, linesDeleted, fileChanged, commitHash } = body;
 
-    if (!campaignId || !commitMessage || !apiKey) {
+    const message = typeof commitMessage === "string" ? commitMessage.trim().slice(0, 500) : "";
+    const key = typeof apiKey === "string" ? apiKey.trim() : "";
+    const bounded = (value: unknown) => {
+      const amount = Number(value);
+      if (!Number.isFinite(amount)) return 0;
+      return Math.max(0, Math.min(1_000_000, Math.trunc(amount)));
+    };
+
+    if (!campaignId || !message || !key) {
       return NextResponse.json(
         { error: "campaignId, commitMessage, and apiKey are required" },
         { status: 400 }
       );
     }
 
-    const validKey = await prisma.ideApiKey.findUnique({ where: { key: apiKey } });
+    const validKey = await prisma.ideApiKey.findUnique({ where: { key } });
     if (!validKey) {
       return NextResponse.json({ error: "Invalid IDE API key" }, { status: 401 });
     }
@@ -29,12 +37,12 @@ export async function POST(req: Request) {
     const update = await prisma.ideUpdate.create({
       data: {
         campaignId,
-        commitMessage,
-        editor: editor || "VS Code",
-        linesAdded: Number(linesAdded) || 0,
-        linesDeleted: Number(linesDeleted) || 0,
-        fileChanged: fileChanged || null,
-        commitHash: commitHash || null,
+        commitMessage: message,
+        editor: typeof editor === "string" && editor.trim() ? editor.trim().slice(0, 40) : "VS Code",
+        linesAdded: bounded(linesAdded),
+        linesDeleted: bounded(linesDeleted),
+        fileChanged: typeof fileChanged === "string" && fileChanged.trim() ? fileChanged.trim().slice(0, 240) : null,
+        commitHash: typeof commitHash === "string" && commitHash.trim() ? commitHash.trim().slice(0, 64) : null,
       },
     });
 

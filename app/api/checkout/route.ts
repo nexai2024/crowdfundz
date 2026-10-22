@@ -3,9 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
 import { destinationChargesReady } from "@/lib/stripe-connect";
 import { isAllowedAppOrigin } from "@/lib/hosts";
-import { sameOriginOrForbid } from "@/lib/http";
+import { isEmailAddress, sameOriginOrForbid } from "@/lib/http";
 import { pledgeAllocations } from "@/lib/escrow";
 import { platformFeeCents } from "@/lib/platform-fee";
+import { consumeRateLimit, requestIp } from "@/lib/waitlist-rate-limit";
 
 type CheckoutBody = {
   tierId?: string;
@@ -23,18 +24,32 @@ type CheckoutBody = {
 export async function POST(req: Request) {
   const originBlock = sameOriginOrForbid(req);
   if (originBlock) return originBlock;
+  if (!(await consumeRateLimit("checkout", requestIp(req), 8, 10 * 60 * 1000))) {
+    return NextResponse.json(
+      { error: "Too many checkout attempts from this network. Try again in a few minutes." },
+      { status: 429 }
+    );
+  }
 
   try {
     const body = (await req.json()) as CheckoutBody;
     const email = body.email?.trim().toLowerCase() || "";
     const subdomain = body.subdomain?.trim().toLowerCase() || "";
     const slug = body.slug?.trim() || "";
+    const name = (body.name?.trim() || "Anonymous Backer").slice(0, 80);
+    const handle = body.handle?.trim().replace(/^@/, "").slice(0, 40) || "";
 
     if (!body.tierId || !subdomain || !slug || !email) {
       return NextResponse.json(
         { error: "Tier, project, and email are required" },
         { status: 400 }
       );
+    }
+    if (!isEmailAddress(email)) {
+      return NextResponse.json({ error: "Enter a valid email address." }, { status: 400 });
+    }
+    if (handle && !/^[a-zA-Z0-9_-]+$/.test(handle)) {
+      return NextResponse.json({ error: "Handles can use letters, numbers, and dashes." }, { status: 400 });
     }
 
     const tier = await prisma.tier.findUnique({
@@ -51,6 +66,9 @@ export async function POST(req: Request) {
         { error: "That pledge level does not belong to this project" },
         { status: 400 }
       );
+    }
+    if (tier.campaign.status !== "ACTIVE") {
+      return NextResponse.json({ error: "This project is not accepting pledges." }, { status: 403 });
     }
 
     const fundingMode = body.fundingMode === "milestone" ? "MILESTONE" : "INSTANT";
@@ -98,8 +116,8 @@ export async function POST(req: Request) {
         campaignId: tier.campaignId,
         tierId: tier.id,
         email,
-        name: body.name?.trim() || "Anonymous Backer",
-        handle: body.handle?.replace(/^@/, "") || null,
+        name,
+        handle: handle || null,
         message: body.message ? body.message.slice(0, 120) : null,
         amountUsd: tier.priceUsd,
         status: "PENDING",

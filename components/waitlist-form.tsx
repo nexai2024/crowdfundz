@@ -73,8 +73,8 @@ export default function WaitlistForm() {
   if (view === "joined") {
     return (
       <div className="rounded-3xl border border-emerald-500/30 bg-emerald-500/10 p-8">
-        <p className="font-mono text-xs uppercase tracking-wider text-emerald-300">You're on the list</p>
-        <h2 className="mt-3 text-2xl font-bold text-white">Thanks. We'll write when a spot opens.</h2>
+        <p className="font-mono text-xs uppercase tracking-wider text-emerald-300">You&apos;re on the list</p>
+        <h2 className="mt-3 text-2xl font-bold text-white">Thanks. We&apos;ll write when a spot opens.</h2>
         <p className="mt-3 text-sm leading-relaxed text-slate-300">
           A confirmation is on its way to your inbox. Keep an eye out for a separate invite when the studio is ready.
         </p>
@@ -86,9 +86,9 @@ export default function WaitlistForm() {
     return (
       <div className="rounded-3xl border border-slate-700 bg-slate-900/80 p-8">
         <p className="font-mono text-xs uppercase tracking-wider text-emerald-300">Already listed</p>
-        <h2 className="mt-3 text-2xl font-bold text-white">You're already on the list.</h2>
+        <h2 className="mt-3 text-2xl font-bold text-white">You&apos;re already on the list.</h2>
         <p className="mt-3 text-sm leading-relaxed text-slate-300">
-          We have this email. There's nothing else to submit — we'll use the same address for the invite.
+          We have this email. There&apos;s nothing else to submit — we&apos;ll use the same address for the invite.
         </p>
       </div>
     );

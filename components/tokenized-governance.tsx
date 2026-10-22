@@ -1,22 +1,33 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Vote, CheckCircle2 } from "lucide-react";
 import type { GovernancePollView } from "@/lib/landing-types";
 
 export default function TokenizedGovernance({
   campaignId,
   polls = [],
+  voterEmail = "",
 }: {
   campaignId?: string;
   polls?: GovernancePollView[];
+  voterEmail?: string;
 }) {
+  const router = useRouter();
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
   const [voteError, setVoteError] = useState("");
-  const [voterEmail, setVoterEmail] = useState("");
   const activePoll = polls[0];
   if (!activePoll) return null;
+
+  const goToSignIn = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    const path = `${window.location.pathname}${window.location.search}`;
+    if (!path.startsWith("/") || path.startsWith("//") || path.includes("://")) return;
+    event.preventDefault();
+    router.push(`/account?next=${encodeURIComponent(path)}`);
+  };
 
   const handleVote = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,14 +94,19 @@ export default function TokenizedGovernance({
             </div>
 
             <div className="pt-2 flex gap-2">
-              <input
-                type="email"
-                required
-                value={voterEmail}
-                onChange={(e) => setVoterEmail(e.target.value)}
-                placeholder="Backer Email Address"
-                className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-hidden focus:border-emerald-500 font-mono"
-              />
+              {voterEmail ? (
+                <p className="flex-1 truncate rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-mono text-slate-300">
+                  {voterEmail}
+                </p>
+              ) : (
+                <Link
+                  href="/account"
+                  onClick={goToSignIn}
+                  className="flex-1 rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-mono text-emerald-300 hover:border-emerald-500/40"
+                >
+                  Sign in with your pledge email
+                </Link>
+              )}
               <button
                 type="submit"
                 disabled={selectedOption === null || !voterEmail}

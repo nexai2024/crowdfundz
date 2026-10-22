@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ownerMutation } from "@/lib/http";
+import { optionalHttpUrl, requiredText } from "@/lib/studio";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -25,23 +26,38 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { campaignId, title, sandboxUrl, environment, embedCode } = body;
+    const body = (await req.json()) as {
+      campaignId?: string;
+      title?: string;
+      sandboxUrl?: string;
+      environment?: string;
+      embedCode?: string;
+    };
+    const title = requiredText(body.title, 120);
+    const sandboxUrl = optionalHttpUrl(body.sandboxUrl);
+    const environment = requiredText(body.environment, 80) ?? "Node.js / React";
+    const embedCode =
+      typeof body.embedCode === "string" && body.embedCode.trim()
+        ? body.embedCode.trim().slice(0, 2000)
+        : null;
 
-    if (!campaignId || !title || !sandboxUrl) {
-      return NextResponse.json({ error: "Missing required sandbox parameters" }, { status: 400 });
+    if (!body.campaignId || !title || !sandboxUrl || sandboxUrl === "invalid") {
+      return NextResponse.json(
+        { error: "A sandbox needs a project, a title, and an http or https URL" },
+        { status: 400 }
+      );
     }
 
-    const owner = await ownerMutation(req, campaignId);
+    const owner = await ownerMutation(req, body.campaignId);
     if (owner) return owner;
 
     const sandbox = await prisma.demoSandbox.create({
       data: {
-        campaignId,
+        campaignId: body.campaignId,
         title,
         sandboxUrl,
-        environment: environment || "Node.js / React",
-        embedCode: embedCode || null,
+        environment,
+        embedCode,
         status: "RUNNING",
       },
     });

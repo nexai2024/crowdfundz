@@ -5,6 +5,7 @@ import { isReservedSubdomain } from "@/lib/subdomain";
 import { allocationTotals } from "@/lib/escrow";
 import { platformFeeCents } from "@/lib/platform-fee";
 import { confirmOpenPledges } from "@/lib/pledges";
+import { publicHttpUrl } from "@/lib/studio";
 import type {
   CampaignLandingData,
   CreatorHomeData,
@@ -68,7 +69,7 @@ export async function getCreatorHome(subdomain: string): Promise<CreatorHomeData
   const onCreatorHost = isOnCreatorHost(host, subdomain);
   const name = creator.name || subdomain;
   const statusRank = { ACTIVE: 0, PAUSED: 1, DRAFT: 2, COMPLETED: 3 } as const;
-  const campaigns = [...creator.campaigns].sort((a, b) => {
+  const campaigns = creator.campaigns.filter((campaign) => campaign.status !== "DRAFT").sort((a, b) => {
     const statusDiff = statusRank[a.status] - statusRank[b.status];
     if (statusDiff !== 0) return statusDiff;
     return b.totalRaised - a.totalRaised;
@@ -218,10 +219,9 @@ export async function getCampaignLanding(
 
   const campaignRef = await prisma.campaign.findUnique({
     where: { creatorId_slug: { creatorId: creator.id, slug } },
-    select: { id: true },
+    select: { id: true, status: true },
   });
-  if (!campaignRef) return null;
-  await confirmOpenPledges([campaignRef.id]);
+  if (!campaignRef || campaignRef.status === "DRAFT") return null;
 
   const campaign = await prisma.campaign.findUnique({
     where: { creatorId_slug: { creatorId: creator.id, slug } },
@@ -245,7 +245,7 @@ export async function getCampaignLanding(
       metrics: { orderBy: { recordedAt: "desc" }, take: 1 },
       ideUpdates: { orderBy: { createdAt: "desc" }, take: 5 },
       sandboxes: { take: 3 },
-      polls: { include: { votes: true }, orderBy: { createdAt: "desc" } },
+      polls: { orderBy: { createdAt: "desc" }, include: { _count: { select: { votes: true } } } },
       bounties: { orderBy: { createdAt: "desc" } },
       compliance: true,
       sponsors: { where: { active: true } },
@@ -278,10 +278,10 @@ export async function getCampaignLanding(
     subdomain: creator.subdomain ?? subdomain,
     homeHref: onCreatorHost ? "/" : `/${subdomain}`,
     wallHref: onCreatorHost ? `/${slug}/wall` : `/${subdomain}/${slug}/wall`,
-    repoUrl: campaign.repoUrl,
-    productionUrl: campaign.productionUrl,
-    previewUrl: campaign.previewUrl,
-    vercelProjectUrl: campaign.vercelProjectUrl,
+    repoUrl: publicHttpUrl(campaign.repoUrl),
+    productionUrl: publicHttpUrl(campaign.productionUrl),
+    previewUrl: publicHttpUrl(campaign.previewUrl),
+    vercelProjectUrl: publicHttpUrl(campaign.vercelProjectUrl),
     tiers: campaign.tiers.map((tier) => ({
       id: tier.id,
       name: tier.name,
@@ -330,14 +330,20 @@ export async function getCampaignLanding(
       fileChanged: update.fileChanged,
       createdAt: update.createdAt.toISOString(),
     })),
-    sandboxes: campaign.sandboxes.map((sb) => ({
-      id: sb.id,
-      title: sb.title,
-      sandboxUrl: sb.sandboxUrl,
-      embedCode: sb.embedCode,
-      environment: sb.environment,
-      status: sb.status,
-    })),
+    sandboxes: campaign.sandboxes.flatMap((sb) => {
+      const sandboxUrl = publicHttpUrl(sb.sandboxUrl);
+      if (!sandboxUrl) return [];
+      return [
+        {
+          id: sb.id,
+          title: sb.title,
+          sandboxUrl,
+          embedCode: null,
+          environment: sb.environment,
+          status: sb.status,
+        },
+      ];
+    }),
     polls: campaign.polls.map((p) => ({
       id: p.id,
       title: p.title,
@@ -345,7 +351,7 @@ export async function getCampaignLanding(
       options: p.options,
       status: p.status,
       expiresAt: p.expiresAt ? p.expiresAt.toISOString() : null,
-      votesCount: p.votes.length,
+      votesCount: p._count.votes,
     })),
     bounties: campaign.bounties.map((b) => ({
       id: b.id,
@@ -362,14 +368,21 @@ export async function getCampaignLanding(
           taxFormFiled: campaign.compliance.taxFormFiled,
         }
       : null,
-    sponsors: campaign.sponsors.map((s) => ({
-      id: s.id,
-      sponsorName: s.sponsorName,
-      logoUrl: s.logoUrl,
-      websiteUrl: s.websiteUrl,
-      tierName: s.tierName,
-      amountPaidUsd: s.amountPaidUsd,
-    })),
+    sponsors: campaign.sponsors.flatMap((s) => {
+      const websiteUrl = publicHttpUrl(s.websiteUrl);
+      const logoUrl = publicHttpUrl(s.logoUrl);
+      if (!websiteUrl || !logoUrl) return [];
+      return [
+        {
+          id: s.id,
+          sponsorName: s.sponsorName,
+          logoUrl,
+          websiteUrl,
+          tierName: s.tierName,
+          amountPaidUsd: s.amountPaidUsd,
+        },
+      ];
+    }),
     collaborations: campaign.collaborations.map((c) => ({
       id: c.id,
       partnerSubdomain: c.partnerSubdomain,
