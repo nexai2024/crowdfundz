@@ -1,6 +1,8 @@
 import type Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
+import { sendTransactionalEmail } from "@/lib/mail";
+import { createBackerToken } from "@/app/api/checkout/token";
 import { settlePledgePayout, stripeFeeCentsForCharge } from "@/lib/escrow";
 
 export type ReconcileAdjustment = {
@@ -72,6 +74,25 @@ export async function applyPaidCheckoutSession(session: Stripe.Checkout.Session)
     });
     if (updated.count === 1) {
       applied = true;
+
+      const token = createBackerToken(existing.email);
+      const host = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+      const loginUrl = `${host}/api/backer-login?email=${encodeURIComponent(existing.email)}&token=${token}`;
+      try {
+        await sendTransactionalEmail({
+          to: existing.email,
+          subject: "Your pledge receipt and voting link",
+          text: `Thank you for your pledge!
+
+You can use this link to access your backer account and vote on polls without signing up:
+
+${loginUrl}
+
+Thanks!`,
+        });
+      } catch (err) {
+        console.error("Could not send backer email", err);
+      }
       await prisma.campaign.update({
         where: { id: existing.campaignId },
         data: {

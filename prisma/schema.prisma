@@ -1,4 +1,3 @@
-
 datasource db {
   provider = "postgresql"
 }
@@ -8,20 +7,20 @@ generator client {
 }
 
 model User {
-  id                     String        @id @default(cuid())
-  email                  String        @unique
+  id                     String                @id @default(cuid())
+  email                  String                @unique
   name                   String?
-  emailVerified          Boolean       @default(false)
+  emailVerified          Boolean               @default(false)
   image                  String?
-  subdomain              String?       @unique
+  subdomain              String?               @unique
   headline               String?
-  bio                    String?       @db.Text
+  bio                    String?               @db.Text
   stripeConnectAccountId String?
   campaigns              Campaign[]
   sessions               Session[]
   accounts               Account[]
-  createdAt              DateTime      @default(now())
-  updatedAt              DateTime      @updatedAt
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
   devtoolsuser           DevtoolsUser?
   memberships            CommunityMembership[]
   communityComments      CommunityComment[]
@@ -108,6 +107,7 @@ model Campaign {
   sponsors         SponsorSlot[]
   collaborations   CollaborationLoop[]
   paywalls         MilestonePaywall[]
+  makerUpdates     MakerUpdate[]
   subcommunity     Subcommunity?
   createdAt        DateTime            @default(now())
   updatedAt        DateTime            @updatedAt
@@ -523,4 +523,15 @@ model CommunityComment {
   createdAt      DateTime     @default(now())
 
   @@index([subcommunityId, createdAt])
+}
+
+model MakerUpdate {
+  id         String   @id @default(cuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  title      String
+  content    String   @db.Text
+  createdAt  DateTime @default(now())
+
+  @@index([campaignId])
 }

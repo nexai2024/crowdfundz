@@ -226,7 +226,7 @@ export async function getCampaignLanding(
   const campaign = await prisma.campaign.findUnique({
     where: { creatorId_slug: { creatorId: creator.id, slug } },
     include: {
-      tiers: { orderBy: { sortOrder: "asc" } },
+      tiers: { orderBy: { sortOrder: "asc" }, include: { _count: { select: { backers: { where: { status: { in: ["SUCCEEDED", "PENDING"] } } } } } } },
       phases: {
         orderBy: { sortOrder: "asc" },
         include: {
@@ -251,6 +251,7 @@ export async function getCampaignLanding(
       sponsors: { where: { active: true } },
       collaborations: true,
       paywalls: { orderBy: { requiredRaisedUsd: "asc" } },
+      makerUpdates: { orderBy: { createdAt: "desc" } },
     },
   });
 
@@ -290,6 +291,8 @@ export async function getCampaignLanding(
       perks: tier.perks,
       badge: tier.badge,
       featured: tier.featured,
+      limit: tier.limit,
+      backerCount: tier._count.backers,
     })),
     backers: campaign.backers.map((backer) => ({
       id: backer.id,

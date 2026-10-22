@@ -54,7 +54,7 @@ export async function POST(req: Request) {
 
     const tier = await prisma.tier.findUnique({
       where: { id: body.tierId },
-      include: { campaign: { include: { creator: true } } },
+      include: { campaign: { include: { creator: true } }, _count: { select: { backers: { where: { status: { in: ["SUCCEEDED", "PENDING"] } } } } } },
     });
 
     if (
@@ -69,6 +69,14 @@ export async function POST(req: Request) {
     }
     if (tier.campaign.status !== "ACTIVE") {
       return NextResponse.json({ error: "This project is not accepting pledges." }, { status: 403 });
+    }
+
+    if (tier.campaign.endsAt && tier.campaign.endsAt.getTime() <= Date.now()) {
+      return NextResponse.json({ error: "This campaign has ended." }, { status: 403 });
+    }
+
+    if (tier.limit !== null && tier._count.backers >= tier.limit) {
+      return NextResponse.json({ error: "This tier is sold out." }, { status: 403 });
     }
 
     const fundingMode = body.fundingMode === "milestone" ? "MILESTONE" : "INSTANT";

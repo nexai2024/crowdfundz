@@ -13,6 +13,7 @@ export type StudioTask = {
 };
 
 export type StudioProject = {
+  id: string;
   slug: string;
   title: string;
   tagline: string;
@@ -22,7 +23,7 @@ export type StudioProject = {
   manifestoTitle: string | null;
   manifestoQuote: string | null;
   targetGoal: number;
-  status: CampaignStatus;
+  status: "DRAFT" | "ACTIVE" | "COMPLETED" | "PAUSED";
   repoUrl: string | null;
   repoBranch: string | null;
   ideEditor: string | null;
@@ -31,45 +32,59 @@ export type StudioProject = {
   productionUrl: string | null;
   previewUrl: string | null;
   publicHref: string;
-  tiers: Array<{
+  tiers: {
     id: string;
     name: string;
     priceUsd: number;
     description: string;
     perks: string[];
-  }>;
-  milestones: Array<{
+    badge: string | null;
+    featured: boolean;
+  }[];
+  phases: {
     id: string;
     label: string;
     title: string;
     description: string;
-    pullRequestUrl: string | null;
-    pullRequestMerged: boolean;
     heldUsd: number;
     releasedUsd: number;
-  }>;
-  tasks: StudioTask[];
-  faqs: Array<{ id: string; question: string; answer: string }>;
-  sandboxes: Array<{
+    pullRequestUrl: string | null;
+    pullRequestMerged: boolean;
+  }[];
+  tasks: {
+    id: string;
+    phaseId: string | null;
+    title: string;
+    details: string;
+    status: "TODO" | "DOING" | "DONE";
+  }[];
+  faqs: {
+    id: string;
+    question: string;
+    answer: string;
+  }[];
+  sandboxes: {
     id: string;
     title: string;
-    sandboxUrl: string;
     environment: string;
-  }>;
+    sandboxUrl: string;
+  }[];
+  makerUpdates?: { id: string; title: string; content: string; }[];
   bounties: Array<{
     id: string;
     title: string;
     description: string;
     rewardUsd: number;
     status: string;
+    submissions: { id: string; contributorName: string; contributorEmail: string; submissionUrl: string; status: string }[];
   }>;
-  sponsors: Array<{
+  sponsors: {
     id: string;
     sponsorName: string;
     websiteUrl: string;
     tierName: string;
     amountPaidUsd: number;
-  }>;
+  }[];
 };
 
 export async function getStudioProject(
@@ -88,8 +103,9 @@ export async function getStudioProject(
       tasks: { orderBy: { sortOrder: "asc" } },
       faqs: { orderBy: { sortOrder: "asc" } },
       sandboxes: { orderBy: { createdAt: "desc" } },
-      bounties: { orderBy: { createdAt: "desc" } },
+      bounties: { orderBy: { createdAt: "desc" }, include: { submissions: true } },
       sponsors: { where: { active: true }, orderBy: { createdAt: "desc" } },
+      makerUpdates: { orderBy: { createdAt: "desc" } },
     },
   });
   if (!campaign) return null;
@@ -102,6 +118,7 @@ export async function getStudioProject(
 
   const subdomain = campaign.creator.subdomain;
   return {
+    id: campaign.id,
     slug: campaign.slug,
     title: campaign.title,
     tagline: campaign.tagline,
@@ -126,14 +143,16 @@ export async function getStudioProject(
       priceUsd: tier.priceUsd,
       description: tier.description,
       perks: tier.perks,
+      badge: tier.badge,
+      featured: tier.featured,
     })),
-    milestones: campaign.phases.map((phase) => ({
+    phases: campaign.phases.map((phase) => ({
       id: phase.id,
       label: phase.label,
       title: phase.title,
       description: phase.description,
       pullRequestUrl: phase.pullRequestUrl,
-      pullRequestMerged: Boolean(phase.pullRequestMergedAt),
+      pullRequestMerged: phase.pullRequestMergedAt !== null,
       ...allocationTotals(phase.allocations),
     })),
     tasks: campaign.tasks.map((task) => ({
@@ -154,12 +173,18 @@ export async function getStudioProject(
       sandboxUrl: sandbox.sandboxUrl,
       environment: sandbox.environment,
     })),
+    makerUpdates: campaign.makerUpdates.map((u: { id: string; title: string; content: string }) => ({
+      id: u.id,
+      title: u.title,
+      content: u.content
+    })),
     bounties: campaign.bounties.map((bounty) => ({
       id: bounty.id,
       title: bounty.title,
       description: bounty.description,
       rewardUsd: bounty.rewardUsd,
       status: bounty.status,
+      submissions: bounty.submissions,
     })),
     sponsors: campaign.sponsors.map((sponsor) => ({
       id: sponsor.id,

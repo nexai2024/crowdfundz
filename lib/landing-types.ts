@@ -6,6 +6,8 @@ export type CampaignTierView = {
   perks: string[];
   badge: string | null;
   featured: boolean;
+  limit: number | null;
+  backerCount: number;
 };
 
 export type CampaignBackerView = {
@@ -111,6 +113,13 @@ export type MilestonePaywallView = {
   locked: boolean;
 };
 
+export type MakerUpdateView = {
+  id: string;
+  title: string;
+  content: string;
+  createdAt: string;
+};
+
 export type CampaignLandingData = {
   id: string;
   slug: string;
@@ -146,6 +155,7 @@ export type CampaignLandingData = {
   sponsors?: SponsorSlotView[];
   collaborations?: CollaborationLoopView[];
   paywalls?: MilestonePaywallView[];
+  makerUpdates?: MakerUpdateView[];
 };
 
 export type CreatorProjectCard = {

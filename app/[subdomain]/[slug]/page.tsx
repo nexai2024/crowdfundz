@@ -4,6 +4,7 @@ import CampaignLanding from "@/components/campaign-landing";
 import { getCampaignLanding } from "@/lib/campaigns";
 import { getProjectRoom } from "@/lib/community";
 import { getSessionUser } from "@/lib/current-user";
+import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
@@ -41,5 +42,5 @@ export default async function CampaignPage(props: PageProps) {
     return null;
   });
 
-  return <CampaignLanding campaign={campaign} community={community} voterEmail={user?.email ?? ""} />;
+  return <CampaignLanding campaign={campaign} community={community} voterEmail={user?.email ?? ((await cookies()).get("backer_email")?.value ?? "")} />;
 }
